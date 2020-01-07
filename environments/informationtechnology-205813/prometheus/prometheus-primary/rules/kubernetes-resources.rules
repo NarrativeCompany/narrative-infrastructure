@@ -1,0 +1,73 @@
+groups:
+- name: kubernetes-resources
+  rules:
+  - alert: KubeCPUOvercommit
+    annotations:
+      identifier: '{{ $labels.cluster }}'
+      message: Overcommited CPU resource requests on Pods, cannot tolerate node failure.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
+    expr: |
+      sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
+        /
+      sum(node:node_num_cpu:sum)
+        >
+      (count(node:node_num_cpu:sum)-1) / count(node:node_num_cpu:sum)
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubeMemOvercommit
+    annotations:
+      identifier: '{{ $labels.cluster }}'
+      message: Overcommited Memory resource requests on Pods, cannot tolerate node failure.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit
+    expr: |
+      sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
+        /
+      sum(node_memory_MemTotal)
+        >
+      (count(node:node_num_cpu:sum)-1)
+        /
+      count(node:node_num_cpu:sum)
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubeCPUOvercommit
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.resource }}'
+      message: Overcommited CPU resource request quota on Namespaces.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit
+    expr: |
+      sum(kube_resourcequota{job="kube-state", type="hard", resource="requests.cpu"})
+        /
+      sum(node:node_num_cpu:sum)
+        > 1.5
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubeMemOvercommit
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.resource }}'
+      message: Overcommited Memory resource request quota on Namespaces.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit
+    expr: |
+      sum(kube_resourcequota{job="kube-state", type="hard", resource="requests.memory"})
+        /
+      sum(node_memory_MemTotal{job="node-exporter"})
+        > 1.5
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubeQuotaExceeded
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.resource }}'
+      message: 'Resource quota exceeded.'
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubequotaexceeded
+    expr: |
+      100 * kube_resourcequota{job="kube-state", type="used"}
+        / ignoring(instance, job, type)
+      kube_resourcequota{job="kube-state", type="hard"}
+        > 90
+    for: 15m
+    labels:
+      severity: warning
+

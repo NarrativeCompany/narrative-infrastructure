@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: narrative-prometheus-federation
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required."
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: "monitoring"
+  name: production-prometheus-federation
+  namespace: monitoring
+spec:
+  rules:
+  - host: production-prometheus-federation.narrative.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: prometheus
+          servicePort: 9090
+  tls:
+  - secretName: cloudflare-wildcard-narrative-cloud
+    hosts:
+      - production-prometheus-federation.narrative.cloud

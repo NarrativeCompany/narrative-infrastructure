@@ -1,0 +1,14 @@
+---
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: blackbox-exporter
+    namespace: monitoring
+  spec:
+    selector:
+      app: blackbox-exporter
+    ports:
+      - protocol: TCP
+        port: 9115
+        targetPort: 9115
+        name: blackbox

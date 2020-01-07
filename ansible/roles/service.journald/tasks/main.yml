@@ -1,0 +1,22 @@
+---
+# tasks file for service.journald
+# Change the ForwardToSyslog option (whatever the current option is, even if it's commented out) to no and restart journald for change to take effect
+
+- name: ForwardToSyslog to no
+  lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '.*ForwardToSyslog.*'
+    line: '#ForwardToSyslog=no'
+  register: forward_syslog
+
+- name: Assure persistent journald
+  file: 
+    path: /var/log/journal
+    state: directory
+
+- name: Restart journald
+  systemd:
+    name: systemd-journald
+    state: restarted
+  when: forward_syslog.changed
+  

@@ -1,0 +1,21 @@
+[Unit]
+Description=Narrative HAProxy service.
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStartPre=-/usr/bin/docker rm haproxy
+ExecStart=/usr/bin/docker run --name haproxy \
+    --hostname haproxy \
+    --net host \
+    -p 80:80 \
+    -p 443:443 \
+    -v /opt/haproxy:/opt/haproxy \
+    -v /dev/log:/dev/log \
+    haproxy:1.8 haproxy -f /opt/haproxy/haproxy.cfg
+ExecReload=/usr/bin/docker kill -s HUP haproxy
+ExecStop=-/usr/bin/docker stop haproxy
+
+[Install]
+WantedBy=multi-user.target

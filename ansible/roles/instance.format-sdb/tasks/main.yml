@@ -1,0 +1,15 @@
+---
+# tasks file for instance.format-sdb
+- name: Format /dev/sdb as ext4.
+  filesystem:
+    dev: /dev/sdb
+    fstype: ext4
+
+- name: Mount /dev/sdb to mount_path.
+  mount:
+    src: /dev/sdb
+    path: "{{ mount_path }}"
+    fstype: ext4
+    opts: defaults
+    state: mounted
+

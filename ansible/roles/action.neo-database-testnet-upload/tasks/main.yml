@@ -1,0 +1,170 @@
+---
+- name: Copy in google-cloud-sdk apt repo.
+  copy:
+    src: google-cloud-sdk.list
+    dest: /etc/apt/sources.list.d/google-cloud-sdk.list
+
+- name: Install Google apt key.
+  shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+  changed_when: false
+
+- name: Verify the key has been installed.
+  shell: apt-key fingerprint apt-key fingerprint BA07F4FB | grep 54A6
+  changed_when: false
+
+- name: Install google-cloud-sdk.
+  apt:
+    name: google-cloud-sdk
+    state: present
+    update_cache: yes
+
+- name: Copy the neo-database-upload Google Cloud key.
+  copy:
+    content: "{{ vault_neo_database_google_credentials }}"
+    dest: /root/gcloud.json
+    mode: 0400
+
+- name: Authenticate.
+  shell: gcloud auth activate-service-account neo-database-upload@informationtechnology-205813.iam.gserviceaccount.com --key-file=/root/gcloud.json
+
+- name: Stop the neo-python-testnet service.
+  service:
+    name: neo-python-testnet
+    state: stopped
+    enabled: yes
+
+- name: Pause 5 seconds to let service stop.
+  pause:
+    seconds: 5
+
+- name: Get the neo-python-testnet Docker image tag.
+  shell: docker inspect neo-python-testnet | jq -r '.[].Config.Labels.GIT_TAG'
+  register: GIT_TAG
+
+- name: Get the last block.
+  shell: journalctl -u neo-python-testnet | grep TestNet | awk '{ print $12 }' | tail -n 1
+  register: neo_block_test
+
+- name: Get the date.
+  shell: date +%F
+  register: neo_date
+
+- name: Set filename facts.
+  set_fact:
+    neo_test: "Test_{{ neo_block_test.stdout }}_{{ GIT_TAG.stdout }}.tar.gz"
+    neo_test_latest: "Test_latest.tar.gz"
+    neo_test_notify: "Test_Notif_{{ neo_block_test.stdout }}_{{ GIT_TAG.stdout }}.tar.gz"
+    neo_test_notify_latest: "Test_Notif_latest.tar.gz"
+
+- name: Debug.
+  debug:
+    msg: "{{ neo_test }} - {{ neo_test_notify }}"
+
+- name: Create the NEO test tar file.
+  shell: tar -czvf {{ neo_test }} Chains/SC234
+  args:
+    chdir: /opt/neo-python
+  async: 3600
+  poll: 0
+  register: test_tar
+
+- name: Check the NEO test tar file task.
+  async_status:
+    jid: "{{ test_tar.ansible_job_id }}"
+  register: result_test
+  until: result_test.finished
+  retries: 360
+  delay: 10
+
+- name: Create the NEO test notif tar file.
+  shell: tar -czvf {{ neo_test_notify }} Chains/Test_Notif
+  args:
+    chdir: /opt/neo-python
+  async: 3600
+  poll: 0
+  register: test_notif_tar
+
+- name: Check the NEO test_notif tar file task.
+  async_status:
+    jid: "{{ test_notif_tar.ansible_job_id }}"
+  register: result_test_notif
+  until: result_test_notif.finished
+  retries: 360
+  delay: 10
+
+- name: Get the shasum of the test database file.
+  shell: shasum {{ neo_test }} | awk '{ print $1 }'
+  args:
+    chdir: /opt/neo-python
+  register: shasum_test
+
+- name: Get the shasum of the test notify file.
+  shell: shasum {{ neo_test_notify }} | awk '{ print $1 }'
+  args:
+    chdir: /opt/neo-python
+  register: shasum_test_notify
+
+- name: Start neo-python-testnet back up.
+  service:
+    name: neo-python-testnet
+    state: started
+    enabled: yes
+
+- name: Upload the TestNet database files to the Google bucket as "latest".
+  shell: gsutil cp /opt/neo-python/{{ neo_test }} gs://neo-python-chain.narrative.org/{{ neo_test_latest }}
+
+- name: Upload the TestNet database notify files to the Google bucket as "latest".
+  shell: gsutil cp /opt/neo-python/{{ neo_test_notify }} gs://neo-python-chain.narrative.org/{{ neo_test_notify_latest }}
+
+- name: Create the shasum TestNet latest file.
+  shell: echo "{{ shasum_test.stdout }}  Test_latest.tar.gz" > shasum_testnet_latest.txt
+  args:
+    chdir: /opt/neo-python
+
+- name: Add the TestNet notify to the shasum TestNet latest file.
+  shell: echo "{{ shasum_test_notify.stdout }}  Test_Notify_latest.tar.gz" >> shasum_testnet_latest.txt
+  args:
+    chdir: /opt/neo-python
+
+- name: Upload the shasums.
+  shell: gsutil cp /opt/neo-python/{{ item }} gs://neo-python-chain.narrative.org/{{ item }}
+  with_items:
+    - "shasum_testnet_latest.txt"
+
+- name: Remove the tar files.
+  file:
+    path: "/opt/neo-python/{{ item }}"
+    state: absent
+  with_items:
+    - "{{ neo_test }}"
+    - "{{ neo_test_notify }}"
+
+- name: Remove the shasum files.
+  file:
+    path: "/opt/neo-python/{{ item }}"
+    state: absent
+  with_items:
+    - shasum_testnet_latest.txt
+
+- name: Get a list of the bucket files.
+  shell: gsutil ls gs://neo-python-chain.narrative.org
+  register: gsutil_ls
+
+- name: Template in index.html.
+  template:
+    src: index.html.j2
+    dest: /opt/neo-python/index.html
+
+- name: Upload to the Google bucket.
+  shell: gsutil cp /opt/neo-python/index.html gs://neo-python-chain.narrative.org/index.html
+
+- name: Remove the index.html file.
+  file:
+    path: /opt/neo-python/index.html
+    state: absent
+
+- name: Debug.
+  debug:
+    msg: "{{ item }}"
+  with_items: "{{ gsutil_ls.stdout_lines }}"
+

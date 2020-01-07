@@ -1,0 +1,46 @@
+groups:
+- name: kube-pod-rules.rules
+  rules:
+  - alert: KubeHPAScaleUp
+    annotations:
+      identifier: '{{ $labels.hpa }}'
+      message: HPA scale up event occured in {{ $labels.cluster }}. Consider this informational.
+      runbook_url: N/A
+    expr: irate(kube_hpa_status_current_replicas[1m]) > 0
+    labels:
+      severity: warning
+  - alert: KubePodContainerRestart
+    annotations:
+      identifier: '{{ $labels.pod }}'
+      message: A Kubernetes pod has restarted (and might still be restarting) in {{ $labels.cluster }}. Pod may be having issues.
+      runbook_url: N/A
+    expr: increase(kube_pod_container_status_restarts_total[5m]) > 0
+    labels:
+      severity: warning
+  - alert: KubePodContainerRestart
+    annotations:
+      identifier: '{{ $labels.pod }}'
+      message: A Kubernetes pod has restarted (and might still be restarting) in {{ $labels.cluster }}. Pod may be having issues.
+      runbook_url: N/A
+    expr: increase(kube_pod_container_status_restarts_total[5m]) > 0
+    for: 10m
+    labels:
+      severity: critical
+  - alert: KubePodNotReady
+    annotations:
+      identifier: '{{ $labels.pod }}'
+      message: A Kubernetes pod is not ready in {{ $labels.cluster }}. There may be a problem.
+      runbook_url: N/A
+    expr: kube_pod_status_ready{condition="true"} == 0
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubePodNotReady
+    annotations:
+      identifier: '{{ $labels.pod }}'
+      message: A Kubernetes pod is not ready in {{ $labels.cluster }}. There may be a problem.
+      runbook_url: N/A
+    expr: kube_pod_status_ready{condition="true"} == 0
+    for: 20m
+    labels:
+      severity: critical

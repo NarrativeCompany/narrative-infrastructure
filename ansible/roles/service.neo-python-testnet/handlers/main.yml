@@ -1,0 +1,7 @@
+---
+- name: restart_neo-python-testnet
+  systemd:
+    name: neo-python-testnet
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

@@ -1,0 +1,23 @@
+groups:
+- name: kube-prometheus-node-alerting.rules
+  rules:
+  - alert: NodeDiskRunningFull
+    annotations:
+      identifier: '{{ $labels.instance }} - {{ $labels.device }}'
+      message: Disk is expected to be full within the next 24 hours.
+      runbook_url: N/A
+    expr: |
+      predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[6h], 3600 * 24) < 0
+    for: 30m
+    labels:
+      severity: warning
+  - alert: NodeDiskRunningFull
+    annotations:
+      identifier: '{{ $labels.instance }} - {{ $labels.device }}'
+      message: Disk is expected to be full within the next 2 hours.
+      runbook_url: N/A
+    expr: |
+      predict_linear(node_filesystem_free{job="node-exporter",mountpoint!~"^/etc/(?:resolv.conf|hosts|hostname)$"}[30m], 3600 * 2) < 0
+    for: 10m
+    labels:
+      severity: warning

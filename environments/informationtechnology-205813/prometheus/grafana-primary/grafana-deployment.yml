@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+  namespace: it
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: grafana
+      name: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:5.4.3
+        env:
+        - name: GF_SERVER_DOMAIN_ROOT_URL
+          value: "https://grafana.narrative.cloud"
+        - name: GF_AUTH_GOOGLE_ENABLED
+          value: "true"
+        - name: GF_AUTH_GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: OAUTH2_PROXY_CLIENT_ID
+              name: oauth
+        - name: GF_AUTH_GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: OAUTH2_PROXY_CLIENT_SECRET
+              name: oauth
+        - name: GF_AUTH_GOOGLE_ALLOWED_DOMAINS
+          value: narrative.org
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_SECURITY_ADMIN_USER
+          value: "admin"
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: GF_SECURITY_ADMIN_PASSWORD
+              name: grafana-credentials
+        ports:
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-data
+      volumes:
+      - name: "grafana-data"
+        persistentVolumeClaim:
+          claimName: grafana-data

@@ -1,0 +1,5 @@
+---
+docker_daemon_json: |
+  {
+    "log-driver": "journald"
+  }

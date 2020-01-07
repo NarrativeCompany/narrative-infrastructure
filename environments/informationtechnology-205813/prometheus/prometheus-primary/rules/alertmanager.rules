@@ -1,0 +1,30 @@
+groups:
+- name: alertmanager.rules
+  rules:
+  - alert: AlertmanagerConfigInconsistent
+    annotations:
+      message: Alertmanager configuration out of sync.
+      runbook_url: N/A
+    expr: |
+      count_values("config_hash", alertmanager_config_hash{job="alertmanager-main"}) BY (service) / ON(service) GROUP_LEFT() label_replace(prometheus_operator_alertmanager_spec_replicas{job="prometheus-operator"}, "service", "alertmanager-$1", "alertmanager", "(.*)") != 1
+    for: 5m
+    labels:
+      severity: warning
+  - alert: AlertmanagerDownOrMissing
+    annotations:
+      message: Alertmanager down or missing.
+      runbook_url: N/A
+    expr: |
+      label_replace(prometheus_operator_alertmanager_spec_replicas{job="prometheus-operator"}, "job", "alertmanager-$1", "alertmanager", "(.*)") / ON(job) GROUP_RIGHT() sum(up{job="alertmanager-main"}) BY (job) != 1
+    for: 5m
+    labels:
+      severity: warning
+  - alert: AlertmanagerFailedReload
+    annotations:
+      message: Alertmanager's configuration reload failed.
+      runbook_url: N/A
+    expr: |
+      alertmanager_config_last_reload_successful{job="alertmanager-main"} == 0
+    for: 10m
+    labels:
+      severity: warning

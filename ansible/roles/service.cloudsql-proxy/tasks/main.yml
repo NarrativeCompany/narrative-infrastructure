@@ -1,0 +1,29 @@
+---
+# tasks file for service.cloudsql-proxy
+
+- name: Create the /opt/cloudsql directory.
+  file:
+    path: "/opt/cloudsql"
+    state: directory
+
+- name: Create the cloudsql-proxy.service file.
+  template:
+    src: cloudsql-proxy.service.j2
+    dest: /etc/systemd/system/cloudsql-proxy.service
+  notify: restart_cloudsql-proxy
+
+- name: Create the configuration file
+  template:
+    src: creds.json.j2
+    dest: "/opt/cloudsql/creds.json"
+  notify: restart_cloudsql-proxy
+
+- name: Flush handlers (restart cloudsql-proxy if necessary).
+  meta: flush_handlers
+
+- name: Start cloudsql-proxy.
+  systemd:
+    name: cloudsql-proxy
+    state: started
+    enabled: yes
+    daemon_reload: yes

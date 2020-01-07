@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/auth-signin: https://$host/oauth2/sign_in
+    ingress.kubernetes.io/auth-url: https://$host/oauth2/auth
+    ingress.kubernetes.io/ssl-redirect: "true"
+  name: testoauth 
+  namespace: default
+spec:
+  rules:
+  - host: TESTOAUTH.EXAMPLE.ORG
+    http:
+      paths:
+      - backend:
+          serviceName: testoauth
+          servicePort: 80
+  tls:
+  - secretName: TESTOAUTH.EXAMPLE.ORG
+    hosts:
+      - TESTOAUTH.EXAMPLE.ORG
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: oauth-testoauth
+  namespace: default
+spec:
+  rules:
+  - host: TESTOAUTH.EXAMPLE.ORG
+    http:
+      paths:
+      - backend:
+          serviceName: oauth
+          servicePort: 4180
+        path: /oauth2
+  tls:
+  - secretName: TESTOAUTH.EXAMPLE.ORG
+    hosts:
+      - TESTOAUTH.EXAMPLE.ORG

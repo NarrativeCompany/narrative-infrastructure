@@ -1,0 +1,4 @@
+---
+project: staging-narrative
+env: staging
+zone: us-east1

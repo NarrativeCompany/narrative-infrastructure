@@ -1,0 +1,10 @@
+[Unit]
+Description=Prints the NEO block height every 30 seconds.
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=30
+Unit=neo-block-monitor.service
+
+[Install]
+WantedBy=multi-user.target

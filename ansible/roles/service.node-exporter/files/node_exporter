@@ -1,0 +1,1 @@
+OPTIONS="--collector.systemd --collector.textfile.directory /opt/textfile_collector"

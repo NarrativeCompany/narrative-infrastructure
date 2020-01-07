@@ -1,0 +1,167 @@
+---
+# tasks file for service.neo-payment
+
+- name: Create the {{ mount_path }}/config directory.
+  file:
+    path: "{{ mount_path }}/config"
+    owner: '1000'
+    group: '1000'
+    state: directory
+
+- name: If hard_reset is defined, stop the neo-payment service.
+  systemd:
+    name: neo-payment
+    state: stopped
+    enabled: yes
+    daemon_reload: yes
+  when: hard_reset is defined
+
+- name: Reset failed systemd (stopping is a bit unclean).
+  shell:
+    cmd: systemctl reset-failed
+  changed_when: false
+  when: hard_reset is defined
+
+- name: If hard_reset is defined, delete the Chains directory.
+  file:
+    path: "{{ mount_path }}/Chains"
+    state: absent
+  when: hard_reset is defined
+
+- name: Check if {{ mount_path }}/{{ neo_payment_chains_dir }} exists.
+  stat:
+    path: "{{ mount_path }}/{{ neo_payment_chains_dir }}"
+  register: main_dir
+
+- name: Check if {{ mount_path }}/{{ neo_payment_notif_dir }} exists.
+  stat:
+    path: "{{ mount_path }}/{{ neo_payment_notif_dir }}"
+  register: notify_dir
+
+- name: Recursively chown {{ mount_path }}/Chains as bot-ops:bot-ops.
+  file:
+    path: "{{ mount_path }}"
+    owner: 'bot-ops'
+    group: 'bot-ops'
+    recurse: yes
+  when: not main_dir.stat.exists or not notify_dir.stat.exists
+
+- name: Download Main_latest.tar.gz (based on neo_block_number variable).
+  command: wget https://neo-python-chain.narrative.org/Main_{{ neo_block_number | default('latest') }}.tar.gz
+  args:
+    chdir: /opt/neo-payment
+  when: not main_dir.stat.exists and network == 'MAINNET'
+
+- name: Extract Main_latest.tar.gz (based on neo_block_number variable).
+  shell: tar -xzvf /opt/neo-payment/Main_{{ neo_block_number | default('latest') }}.tar.gz
+  args:
+    chdir: /opt/neo-payment
+  async: 1000
+  poll: 0
+  register: extract_main_tar
+  when: not main_dir.stat.exists and network == 'MAINNET'
+
+- name: Check the extract (this will take a long time, it checks every 10 seconds, 360 times (1 hour)).
+  async_status:
+    jid: "{{ extract_main_tar.ansible_job_id }}"
+  register: result_main
+  until: result_main.finished
+  retries: 360
+  delay: 10
+  when: not main_dir.stat.exists and network == 'MAINNET'
+
+- name: Remove Main_latest.tar.gz if it exists (based on neo_block_number variable).
+  file:
+    path: /opt/neo-payment/Main_{{ neo_block_number | default('latest') }}.tar.gz
+    state: absent
+  when: not main_dir.stat.exists and network == 'MAINNET'
+
+- name: Download Main_Notif_latest.tar.gz.
+  command: wget https://neo-python-chain.narrative.org/Main_Notif_{{ neo_block_number | default('latest') }}.tar.gz
+  args:
+    chdir: /opt/neo-payment
+  when: not notify_dir.stat.exists and network == 'MAINNET'
+
+- name: Extract Main_Notif_latest.tar.gz (based on neo_block_number variable).
+  shell: tar -xzvf /opt/neo-payment/Main_Notif_{{ neo_block_number | default('latest') }}.tar.gz
+  args:
+    chdir: /opt/neo-payment
+  async: 1000
+  poll: 0
+  register: extract_tar
+  when: not notify_dir.stat.exists and network == 'MAINNET'
+
+- name: Check the extract (this will take a long time, it checks every 10 seconds, 360 times (1 hour)).
+  async_status:
+    jid: "{{ extract_tar.ansible_job_id }}"
+  register: result_main
+  until: result_main.finished
+  retries: 360
+  delay: 10
+  when: not notify_dir.stat.exists and network == 'MAINNET'
+
+- name: Remove Main_Notif_latest.tar.gz if it exists (based on neo_block_number variable).
+  file:
+    path: /opt/neo-python/Main_Notif_{{ neo_block_number | default('latest') }}.tar.gz
+    state: absent
+  when: not notify_dir.stat.exists and network == 'MAINNET'
+
+- name: Create the neo-payment.service file.
+  template:
+    src: neo-payment.service.j2
+    dest: /etc/systemd/system/neo-payment.service
+  notify: restart_neo-payment
+
+- name: Create the neo-block-monitor.sh file.
+  copy:
+    src: neo-block-monitor.sh
+    dest: /usr/local/bin/neo-block-monitor.sh
+    mode: u=rx,g=rx,o=rx
+
+- name: Create the neo-block-monitor.service file.
+  copy:
+    src: neo-block-monitor.service
+    dest: /etc/systemd/system/neo-block-monitor.service
+
+- name: Create the neo-block-monitor.timer file.
+  copy:
+    src: neo-block-monitor.timer
+    dest: /etc/systemd/system/neo-block-monitor.timer
+
+- name: Copy the nrve-niche-config.json file
+  template:
+    src: nrve-niche-config.json.j2
+    dest: "{{ mount_path }}/config/nrve-niche-config.json"
+  notify: restart_neo-payment
+
+- name: Copy the db-config.json file
+  template:
+    src: db-config.json.j2
+    dest: "{{ mount_path }}/config/db-config.json"
+  notify: restart_neo-payment
+
+- name: Copy the smtp-config.json file
+  template:
+    src: smtp-config.json.j2
+    dest: "{{ mount_path }}/config/smtp-config.json"
+  notify: restart_neo-payment
+
+- name: Reload systemd.
+  command: systemctl daemon-reload
+
+- name: Flush handlers (restart neo-payment if necessary).
+  meta: flush_handlers
+
+- name: Start neo-payment.
+  systemd:
+    name: neo-payment
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Start neo-block-monitor.timer.
+  systemd:
+    name: neo-block-monitor.timer
+    state: started
+    enabled: yes
+    daemon_reload: yes

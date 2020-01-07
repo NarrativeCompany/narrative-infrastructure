@@ -1,0 +1,9 @@
+---
+- hosts: tag_neo
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: instance.packages
+    - role: service.docker
+    - role: instance.format-sdb
+    - role: service.neo-python-testnet

@@ -1,0 +1,50 @@
+---
+# tasks file for service.zookeeper
+- name: Create the /opt/zookeeper directory.
+  file:
+    path: /opt/zookeeper/data
+    owner: '1000'
+    state: directory
+
+- name: Get the Google hostname.
+  shell: curl metadata.google.internal/computeMetadata/v1beta1/instance/hostname
+  register: google_hostname
+
+- name: Debug Google ip.
+  debug:
+    msg: "{{ google_hostname.stdout }}"
+
+- name: Get the zookeeper ID (its the number at the end of the hostname).
+  shell: hostname | awk -F'-' '{ print $NF }' | sed 's/^0*//'
+  register: zookeeper_id
+
+- name: Template the zoo.cfg file
+  template:
+    src: zoo.cfg.j2
+    dest: /opt/zookeeper/zoo.cfg
+    mode: '0600'
+    owner: '1000'
+
+- name: Copy in the zookeeper myid.
+  copy:
+    content: "{{ zookeeper_id.stdout }}"
+    dest: /opt/zookeeper/data/myid
+    owner: '1000'
+
+- name: Template the zookeeper systemd service file.
+  template:
+    src: zookeeper.service.j2
+    dest: /etc/systemd/system/zookeeper.service
+
+- name: If zookeeper_restart is defined, restart zookeeper.
+  systemd:
+    name: zookeeper
+    state: restarted
+  when: zookeeper_restart is defined
+
+- name: Set the zookeeper service to running.
+  systemd:
+    name: zookeeper
+    state: started
+    enabled: yes
+    daemon_reload: yes

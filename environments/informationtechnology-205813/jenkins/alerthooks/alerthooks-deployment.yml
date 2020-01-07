@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: alerthooks
+  namespace: jenkins
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: alerthooks
+    spec:
+      containers:
+      - name: master
+        image: narrativecompany/jenkins-webhook:alerthooks-latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: BEARERTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-bearer
+              key: SECRET
+        resources:
+          requests:
+            cpu: .1
+            memory: 64M
+          limits:
+            cpu: .25
+            memory: 256M
+      imagePullSecrets:
+        - name: narrativecompany-docker

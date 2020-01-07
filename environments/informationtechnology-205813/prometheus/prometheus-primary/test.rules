@@ -1,0 +1,22 @@
+groups:
+- name: kubernetes-apps
+  rules:
+  - alert: KubeStatefulSetGenerationMismatch
+    annotations:
+      message: StatefulSet {{ $labels.namespace }}/{{ labels.statefulset }} generation
+        mismatch
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetgenerationmismatch
+    expr: kube_statefulset_status_observed_generation{job="kube-state"} != kube_statefulset_metadata_generation{job="kube-state"}
+    for: 15m
+    labels:
+      severity: warning
+  - alert: KubePodCrashLooping
+    annotations:
+      message: '{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
+        }}) is restarting {{ printf "%.2f" $value }} / second'
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
+    expr: |
+      rate(kube_pod_container_status_restarts_total{job="kube-state"}[15m]) > 0
+    for: 1h
+    labels:
+      severity: warning

@@ -1,0 +1,91 @@
+# localhost_ssh_config.yml
+#
+#
+# This playbook configures the localhost SSH config and adds host entries for
+# all AWS names.  It replaces spaces with '_'.
+#
+# To run:
+#   ansible-playbook localhost_ssh_config.yml -e region=us-east-1
+#
+# To clean out all trace per region:
+#   ansible-playbook localhost_gce_serial_scan.yml -e region=us-east-1 and -e wipe=yes
+#
+# There is also a custom marker variable - `mark`.  One example use is if you have regions with similar hostnames.
+#
+---
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  tasks:
+    - name: Get all GCE VMs in the project.
+      shell: "gcloud --project {{ project }} compute instances list --format json | jq '[.[] | {name: .name, private_ip: .networkInterfaces[0].networkIP, public_ip: .networkInterfaces[0].accessConfigs[0].natIP, zone: .zone}]'"
+      register: gce_vms
+
+    - name: Debug.
+      debug:
+        msg: "{{ item.name }} - {{ item.private_ip }} - {{ item.public_ip }} {{ item.zone.split('/')[-1] }}"
+      with_items: "{{ gce_vms.stdout }}"
+
+    - name: Get all GCE public keys (IF they have been output to the serial console!)...
+      shell: gcloud compute --project={{ project }} instances get-serial-port-output {{ item.name }} --zone={{ item.zone.split('/')[-1] }} | grep ecdsa-sha2-nistp256 | tail -n 1 | awk '{ print $NF }'
+      with_items: "{{ gce_vms.stdout }}"
+      register: gce_keys
+
+    - name: Debug keys...
+      debug: 
+        msg: "{{ item.stdout }}"
+      with_items: "{{ gce_keys.results }}"
+
+# initialization section
+    - name: Create ~/.ssh/ if it does not exist
+      file:
+        path: "{{ ansible_env.HOME }}/.ssh/"
+        state: directory
+        mode: '0700'
+
+    - name: Touch ~/.ssh/config and ~/.ssh/known_hosts (creates them if they don't exist).
+      file:
+        path: "{{ item }}"
+        state: touch
+      with_items:
+        - "{{ ansible_env.HOME }}/.ssh/config"
+        - "{{ ansible_env.HOME }}/.ssh/known_hosts"
+
+# SSH configuration section
+    - name: Remove previous SSH config settings.
+      blockinfile:
+        dest: "{{ ansible_env.HOME }}/.ssh/config"
+        marker: "# {mark} {{ project }} {{ item.name }} {{ item.zone.split('/')[-1] }} - ansible generated"
+        state: absent
+      with_items: "{{ gce_vms.stdout }}"
+      when: skip_remove is not defined
+
+    - name: Configure SSH proxy host.
+      blockinfile:
+        dest: "{{ ansible_env.HOME }}/.ssh/config"
+        marker: "# {mark} {{ project }} {{ item.name }} {{ item.zone.split('/')[-1] }} - ansible generated"
+        block: |
+          Host {{ item.name }}
+            HostName {% if item.public_ip is none %}{{ item.private_ip }}{% else %}{{ item.public_ip }}{% endif %}
+
+            ServerAliveInterval 30
+      with_items: "{{ gce_vms.stdout }}"
+      when: wipe is not defined
+
+    - name: Clean all environment created SSH fingerprints.
+      lineinfile:
+        dest: "{{ ansible_env.HOME }}/.ssh/known_hosts"
+        regexp: "^.*#\\s{{ project }} {{ item.name }} {{ item.zone.split('/')[-1] }} - ansible generated$"
+        state: absent
+      with_items: "{{ gce_vms.stdout }}"
+      when: wipe is not defined
+
+    - name: Import SSH fingerpints - private IP addresses for items found in the AWS system console.
+      lineinfile:
+        dest: "{{ ansible_env.HOME }}/.ssh/known_hosts"
+        line: "{{ item.0.name}},{{ item.0.private_ip }},{{ item.0.public_ip }} ecdsa-sha2-nistp256 {{ item.1.stdout }} # {{ project }} {{ item.0.name }} {{ item.0.zone.split('/')[-1] }} - ansible generated"
+      with_together:
+        - "{{ gce_vms.stdout }}"
+        - "{{ gce_keys.results }}"
+      when: wipe is not defined
+

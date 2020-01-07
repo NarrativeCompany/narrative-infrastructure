@@ -1,0 +1,12 @@
+{{ define "custom_title" }}{{ .CommonLabels.alertname }} - {{ .CommonLabels.cluster }}{{ end }}
+
+{{ define "custom_text" }}
+{{ range .Alerts }}
+*Severity:* {{ .Labels.severity }} {{ if eq .Labels.severity "warning" }}:warning:{{ else }}:red_circle:{{ end }}
+*Message:* {{ .Annotations.message }}
+*Links:* <{{ .GeneratorURL }}|Prometheus> / <{{ .Annotations.runbook_url }}|Runbook>
+*Details:*
+{{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+{{ end }}
+{{ end }}
+{{ end }}

@@ -1,0 +1,17 @@
+[Unit]
+Description=Narrative neo-python-testnet service.
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStartPre=-/usr/bin/docker rm neo-python-testnet
+ExecStart=/usr/bin/docker run --name neo-python-testnet \
+    --hostname neo-python-testnet \
+    --net host \
+    -v /opt/neo-python:/home/neo-user/.neopython \
+    {{ neo_python_docker_image }} -t
+ExecStop=-/usr/bin/docker stop neo-python-testnet
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,628 @@
+global:
+  scrape_interval:     30s # Set the scrape interval to every 30 seconds. Default is every 1 minute.
+  evaluation_interval: 30s # Evaluate rules every 30 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+
+rule_files:
+  - "/etc/prometheus/rules/*.rules"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['localhost:9090']
+
+  # - job_name: 'kubernetes-apiservers'
+  #   static_configs:
+  #   - targets: ['35.237.119.116:443']
+  #   scheme: https
+  #   tls_config:
+  #     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  #   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+  - job_name: monitoring/kube-prometheus-exporter-kube-controller-manager/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-kube-controller-manager
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: kube-controller-manager
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: http-metrics
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: http-metrics
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kube-dns/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-kube-dns
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: kube-dns
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: http-metrics-dnsmasq
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: http-metrics-dnsmasq
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kube-dns/1
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-kube-dns
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: kube-dns
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: http-metrics-skydns
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: http-metrics-skydns
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kube-etcd/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-kube-etcd
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: kube-etcd
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: http-metrics
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: http-metrics
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kube-scheduler/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-kube-scheduler
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: kube-scheduler
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: http-metrics
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - target_label: endpoint
+      replacement: http-metrics
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kube-state/0
+    honor_labels: true
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - monitoring
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-kube-state
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: kube-state
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: kube-state-metrics
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: kube-state-metrics
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kubelets/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_k8s_app
+      regex: kubelet
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: http-metrics
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: http-metrics
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kubelets/1
+    honor_labels: true
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - kube-system
+    scrape_interval: 30s
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_k8s_app
+      regex: kubelet
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: cadvisor
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: cadvisor
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-kubernetes/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - default
+    scrape_interval: 30s
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: apiserver
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_provider
+      regex: kubernetes
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: https
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: https
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: monitoring/kube-prometheus-exporter-node/0
+    honor_labels: false
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names:
+        - monitoring
+    scrape_interval: 30s
+    relabel_configs:
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_app
+      regex: exporter-node
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_service_label_component
+      regex: node-exporter
+    - action: keep
+      source_labels:
+      - __meta_kubernetes_endpoint_port_name
+      regex: metrics
+    - source_labels:
+      - __meta_kubernetes_namespace
+      target_label: namespace
+    - source_labels:
+      - __meta_kubernetes_pod_name
+      target_label: pod
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: service
+    - source_labels:
+      - __meta_kubernetes_service_name
+      target_label: job
+      replacement: ${1}
+    - source_labels:
+      - __meta_kubernetes_service_label_component
+      target_label: job
+      regex: (.+)
+      replacement: ${1}
+    - target_label: endpoint
+      replacement: metrics
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+  #
+  # Not part of the prometheus-operator/kube-prometheus helm config
+  - job_name: 'kubernetes-service-endpoints'
+    kubernetes_sd_configs:
+    - role: endpoints
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+      action: replace
+      target_label: __scheme__
+      regex: (https?)
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+      action: replace
+      target_label: __address__
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: kubernetes_namespace
+    - source_labels: [__meta_kubernetes_service_name]
+      action: replace
+      target_label: kubernetes_name
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+  ## Example scrape config for probing services via the Blackbox Exporter.
+  ##
+  ## The relabeling allows the actual service scrape endpoint to be configured
+  ## via the following annotations:
+  ##
+  ## * `prometheus.io/probe`: Only probe services that have a value of `true`
+  - job_name: 'kubernetes-services-probe'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    kubernetes_sd_configs:
+    - role: service
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
+      action: keep
+      regex: true
+    - source_labels: [__address__]
+      target_label: __param_target
+    - target_label: __address__
+      replacement: blackbox-exporter.monitoring.svc.cluster.local:9115
+    - source_labels: [__param_target]
+      target_label: instance
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+    - source_labels: [__meta_kubernetes_namespace]
+      target_label: kubernetes_namespace
+    - source_labels: [__meta_kubernetes_service_name]
+      target_label: kubernetes_name
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+  # Example scrape config for pods
+  #
+  # The relabeling allows the actual pod scrape endpoint to be configured via the
+  # following annotations:
+  #
+  # * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+  # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+  # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the
+  # pod's declared ports (default is a port-free target if none are declared).
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+    - role: pod
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      target_label: __address__
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: kubernetes_namespace
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: kubernetes_pod_name
+    - target_label: cluster
+      replacement: narrative-staging-cluster
+
+  - job_name: 'staging-narrative-prometheus-node-exporter'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: https
+    gce_sd_configs:
+    - project: staging-narrative
+      zone: us-east1-b
+      refresh_interval: 1m
+      port: 9143
+      tag_separator: ','
+    - project: staging-narrative
+      zone: us-east1-c
+      refresh_interval: 1m
+      port: 9143
+      tag_separator: ','
+    - project: staging-narrative
+      zone: us-east1-d
+      refresh_interval: 1m
+      port: 9143
+      tag_separator: ','
+    tls_config:
+      ca_file: /opt/prometheus-tls-client-ca/ca.pem
+      cert_file: /opt/prometheus-tls-client/tls.crt
+      key_file: /opt/prometheus-tls-client/tls.key
+      server_name: prometheus.narrative.org
+      insecure_skip_verify: false
+    relabel_configs:
+    - source_labels: [__meta_gce_instance_name]
+      separator: ;
+      regex: (.*)
+      target_label: gce_instance_name
+      replacement: ${1}
+      action: replace
+    - source_labels: [__meta_gce_private_ip]
+      separator: ;
+      regex: (.*)
+      target_label: gce_private_ip
+      replacement: ${1}
+      action: replace
+    - source_labels: [__meta_gce_public_ip]
+      separator: ;
+      regex: (.*)
+      target_label: gce_public_ip
+      replacement: ${1}
+      action: replace
+    - source_labels: [__meta_gce_project]
+      separator: ;
+      regex: (.*)
+      target_label: gce_project
+      replacement: ${1}
+      action: replace
+    - source_labels: [__meta_gce_tags]
+      separator: ;
+      regex: .*,prometheus-node-exporter,.*
+      replacement: $1
+      action: keep
+    - source_labels: [__meta_gce_instance_status]
+      separator: ;
+      regex: RUNNING
+      replacement: $1
+      action: keep
+    - target_label: cluster
+      replacement: narrative-staging-cluster

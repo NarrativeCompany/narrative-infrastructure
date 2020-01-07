@@ -1,0 +1,21 @@
+groups:
+- name: neo.rules
+  rules:
+  - alert: NeoBlockRateLow
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'This NEO node has a block rate of 0. The neo-python service may need to be restarted.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#neoblockratelow'
+    expr: rate(neo_block{block_type=~"current"}[60m]) == 0
+    for: 5m
+    labels:
+      severity: warning
+  - alert: NeoBlockRateLowRestart
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'This NEO node has a block rate of 0. Triggering Jenkins: https://jenkins.narrative.cloud/job/neo_payment_restart/'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#neoblockratelow'
+    expr: rate(neo_block{block_type=~"current"}[60m]) == 0
+    for: 5m
+    labels:
+      severity: webhook

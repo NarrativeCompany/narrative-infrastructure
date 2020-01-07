@@ -1,0 +1,10 @@
+---
+- hosts: "{{ host | default('tag_neo-pay') }}"
+  become: yes
+  serial: 1
+  gather_facts: yes
+  tasks:
+    - name: "Restart {{ service | default('neo-python') }}."
+      systemd:
+        name: "{{ service | default('neo-python') }}"
+        state: restarted

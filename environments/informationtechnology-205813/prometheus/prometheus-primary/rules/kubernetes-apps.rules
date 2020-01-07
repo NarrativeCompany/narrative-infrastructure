@@ -1,0 +1,132 @@
+groups:
+- name: kubernetes-apps
+  rules:
+  # - alert: KubePodCrashLooping
+  #   annotations:
+  #     message: '{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
+  #       }}) is restarting {{ printf "%.2f" $value }} / second'
+  #     runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
+  #   expr: |
+  #     rate(kube_pod_container_status_restarts_total{job="kube-state"}[15m]) > 0
+  #   for: 1h
+  #   labels:
+  #     severity: warning
+  # - alert: KubePodNotReady
+  #   annotations:
+  #     message: '{{ $labels.namespace }}/{{ $labels.pod }} is not ready.'
+  #     runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready
+  #   expr: |
+  #     sum by (namespace, pod) (kube_pod_status_phase{job="kube-state", phase!~"Running|Succeeded"}) > 0
+  #   for: 1h
+  #   labels:
+  #     severity: warning
+  - alert: KubeDeploymentGenerationMismatch
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.deployment }}'
+      message: Deployment generation mismatch.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentgenerationmismatch
+    expr: |
+      kube_deployment_status_observed_generation{job="kube-state"}
+        !=
+      kube_deployment_metadata_generation{job="kube-state"}
+    for: 15m
+    labels:
+      severity: warning
+  - alert: KubeDeploymentReplicasMismatch
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.deployment }}'
+      message: Deployment replica mismatch.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentreplicasmismatch
+    expr: |
+      kube_deployment_spec_replicas{job="kube-state"}
+        !=
+      kube_deployment_status_replicas_available{job="kube-state"}
+    for: 15m
+    labels:
+      severity: warning
+  - alert: KubeStatefulSetReplicasMismatch
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.statefulset }}'
+      message: StatefulSet replica mismatch.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch
+    expr: |
+      kube_statefulset_status_replicas_ready{job="kube-state"}
+        !=
+      kube_statefulset_status_replicas{job="kube-state"}
+    for: 15m
+    labels:
+      severity: warning
+  - alert: KubeStatefulSetGenerationMismatch
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.statefulset }}'
+      message: StatefulSet generation mismatch.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetgenerationmismatch
+    expr: kube_statefulset_status_observed_generation{job="kube-state"} != kube_statefulset_metadata_generation{job="kube-state"}
+    for: 15m
+    labels:
+      severity: warning
+  - alert: KubeDaemonSetRolloutStuck
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.daemonset }}'
+      message: Daemonset appears stuck.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetrolloutstuck
+    expr: |
+      kube_daemonset_status_number_ready{job="kube-state"}
+        /
+      kube_daemonset_status_desired_number_scheduled{job="kube-state"} * 100 < 100
+    for: 15m
+    labels:
+      severity: warning
+  - alert: KubeDaemonSetNotScheduled
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.daemonset }}'
+      message: A number of pods of daemonset are not scheduled.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetnotscheduled
+    expr: |
+      kube_daemonset_status_desired_number_scheduled{job="kube-state"}
+        -
+      kube_daemonset_status_current_number_scheduled{job="kube-state"} > 0
+    for: 10m
+    labels:
+      severity: warning
+  - alert: KubeDaemonSetMisScheduled
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.daemonset }}'
+      message: A number of pods of daemonset are running where they are not supposed to run.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetmisscheduled
+    expr: |
+      kube_daemonset_status_number_misscheduled{job="kube-state"} > 0
+    for: 10m
+    labels:
+      severity: warning
+  - alert: KubeCronJobRunning
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.cronjob }}'
+      message: CronJob is taking more than 1h to complete.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecronjobrunning
+    expr: |
+      time() - kube_cronjob_next_schedule_time{job="kube-state"} > 3600
+    for: 1h
+    labels:
+      severity: warning
+  - alert: KubeJobCompletion
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.job }}'
+      message: Job is taking more than 1h to complete.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobcompletion
+    expr: |
+      kube_job_spec_completions{job="kube-state"} - kube_job_status_succeeded{job="kube-state"}  > 0
+    for: 1h
+    labels:
+      severity: warning
+  - alert: KubeJobFailed
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.job }}'
+      message: Job failed to complete.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobfailed
+    expr: |
+      kube_job_status_failed{job="kube-state"}  > 0
+    for: 1h
+    labels:
+      severity: warning
+

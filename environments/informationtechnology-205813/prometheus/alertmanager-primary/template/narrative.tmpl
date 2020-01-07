@@ -1,0 +1,25 @@
+{{ define "__single_message_title" }}{{ range .Alerts.Firing }}{{ .Labels.alertname }} - {{ .Annotations.identifier }} - {{ .Labels.cluster }} :warning:{{ end }}{{ range .Alerts.Resolved }}{{ .Labels.alertname }} - {{ .Annotations.identifier }} - {{ .Labels.cluster }} :white_check_mark:{{ end }}{{ end }}
+
+{{ define "custom_title" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }} {{ .CommonLabels.alertname }} - {{ .CommonLabels.cluster }}] :warning:{{ else }}:{{ .Alerts.Resolved | len }} {{ .CommonLabels.alertname }} - {{ .CommonLabels.cluster }}] :white_check_mark:{{ end }}{{ end }}
+{{ define "custom_text" }}
+{{ if gt (len .Alerts.Firing) 0 }}
+{{ .CommonAnnotations.message }}
+{{ range .Alerts.Firing }}*Identifier:* <{{ .GeneratorURL }}|{{ .Annotations.identifier }}>
+{{ end }}Details...
+{{ range .Alerts.Firing }}• identifier: {{ .Annotations.identifier }}
+• links: <{{ .GeneratorURL }}|Prometheus> / <{{ .Annotations.runbook_url }}|Runbook>
+{{ range .Labels.SortedPairs }}• {{ .Name }}: `{{ .Value }}`
+{{ end }}
+{{ end }}
+{{ end }}
+{{ if gt (len .Alerts.Resolved) 0 }}
+{{ .CommonAnnotations.message }}
+{{ range .Alerts.Resolved }}*Identifier:* <{{ .GeneratorURL }}|{{ .Annotations.identifier }}>
+{{ end }}Details...
+{{ range .Alerts.Resolved }}• identifier: {{ .Annotations.identifier }}
+• links: <{{ .GeneratorURL }}|Prometheus> / <{{ .Annotations.runbook_url }}|Runbook>
+{{ range .Labels.SortedPairs }}• {{ .Name }}: `{{ .Value }}`
+{{ end }}
+{{ end }}
+{{ end }}
+{{ end }}

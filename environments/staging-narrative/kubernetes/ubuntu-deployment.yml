@@ -1,0 +1,17 @@
+# This is a useful deployment for testing connectivity within and outside of the Kubernetes environment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ubuntu
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: interactive
+    spec:
+      containers:
+      - name: ubuntu
+        image: ubuntu:18.04
+        command: ['/bin/bash', '-c', 'sleep infinity']

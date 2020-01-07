@@ -1,0 +1,21 @@
+groups:
+- name: blackboxexporter.rules
+  rules:
+  - alert: ProbeFailed
+    annotations:
+      identifier: '{{ $labels.instance }}'
+      message: 'Blackbox probe has failed. Site may be down.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#probefailed'
+    expr: probe_success == 0
+    for: 1m
+    labels:
+      severity: warning
+  - alert: ProbeFailed
+    annotations:
+      identifier: '{{ $labels.instance }}'
+      message: 'Blackbox probe has failed. Site may be down.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#probefailed'
+    expr: probe_success == 0
+    for: 3m
+    labels:
+      severity: critical

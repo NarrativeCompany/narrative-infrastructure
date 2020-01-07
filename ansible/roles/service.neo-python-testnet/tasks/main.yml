@@ -1,0 +1,125 @@
+---
+# tasks file for service.neo-python-testnet
+
+- name: Mount /dev/sdb to /opt/neo-python.
+  mount:
+    src: /dev/sdb
+    path: /opt/neo-python
+    fstype: ext4
+    opts: defaults
+    state: mounted
+
+- name: Create the /opt/neo-python directory.
+  file:
+    path: /opt/neo-python
+    owner: '1000'
+    group: '1000'
+    state: directory
+
+- name: Create the /opt/textfile_collector directory.
+  file:
+    path: /opt/textfile_collector
+    owner: bot-ops
+    group: bot-ops
+    state: directory
+
+- name: Check if /opt/neo-python/Chains/SC234 exists.
+  stat:
+    path: /opt/neo-python/Chains/SC234
+  register: test_dir
+
+- name: Check if /opt/neo-python/Chains/Test_Notif exists.
+  stat:
+    path: /opt/neo-python/Chains/Test_Notif
+  register: notify_dir
+
+- name: Download Test_latest.tar.gz.
+  command: wget https://neo-python-chain.narrative.org/Test_latest.tar.gz
+  args:
+    chdir: /opt/neo-python
+  warn: False
+  when: not test_dir.stat.exists
+
+- name: Extract Test_latest.tar.gz.
+  shell: tar -xzvf /opt/neo-python/Test_latest.tar.gz
+  args:
+    chdir: /opt/neo-python
+  async: 1000
+  poll: 0
+  register: extract_test_tar
+  warn: False
+  when: not test_dir.stat.exists
+
+- name: Check the extract (this will take a long time, it checks every 10 seconds, 360 times (1 hour)).
+  async_status:
+    jid: "{{ extract_test_tar.ansible_job_id }}"
+  register: result_test
+  until: result_test.finished
+  retries: 360
+  delay: 10
+
+- name: Remove Test_latest.tar.gz if it exists.
+  file:
+    path: /opt/neo-python/Test_latest.tar.gz
+    state: absent
+
+- name: Download Test_Notif_latest.tar.gz.
+  command: wget https://neo-python-chain.narrative.org/Test_Notif_latest.tar.gz
+  args:
+    chdir: /opt/neo-python
+  warn: False
+  when: not notify_dir.stat.exists
+
+- name: Extract Test_Notif_latest.tar.gz.
+  shell: tar -xzvf /opt/neo-python/Test_Notif_latest.tar.gz
+  args:
+    chdir: /opt/neo-python
+  async: 1000
+  poll: 0
+  register: extract_tar
+  warn: False
+  when: not notify_dir.stat.exists
+
+- name: Check the extract (this will take a long time, it checks every 10 seconds, 360 times (1 hour)).
+  async_status:
+    jid: "{{ extract_tar.ansible_job_id }}"
+  register: result
+  until: result.finished
+  retries: 360
+  delay: 10
+
+- name: Remove Test_Notif_latest.tar.gz if it exists.
+  file:
+    path: /opt/neo-python/Test_Notif_latest.tar.gz
+    state: absent
+
+- name: Recusivly chown /opt/neo-python/Chains as bot-ops:bot-ops.
+  file:
+    path: /opt/neo-python/Chains
+    owner: 'bot-ops'
+    group: 'bot-ops'
+    recurse: yes
+  when: not test_dir.stat.exists or not notify_dir.stat.exists
+
+- name: Create the neo-python-testnet.service file.
+  template:
+    src: neo-python-testnet.service.j2
+    dest: /etc/systemd/system/neo-python-testnet.service
+  notify: restart_neo-python-testnet
+
+- name: Create the restart-neo-python-testnet cron file.
+  copy:
+    src: restart-neo-python-testnet
+    dest: /etc/cron.hourly/restart-neo-python-testnet
+    mode: '0755'
+
+- name: Flush handlers (restart neo-python-testnet if necessary).
+  meta: flush_handlers
+
+- name: Start neo-python-testnet.
+  systemd:
+    name: neo-python-testnet
+    state: started
+    enabled: yes
+    daemon_reload: yes
+

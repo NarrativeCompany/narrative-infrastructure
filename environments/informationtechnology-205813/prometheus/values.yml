@@ -1,0 +1,38 @@
+# alertmanagerFiles:
+#   alertmanager.yml:
+#     global:
+#     templates:
+#     - '/etc/alertmanager/template/*.tmpl'
+#     route:
+#       group_by: ['alertname', 'cluster', 'service']
+#       group_wait: 30s
+#       group_interval: 5m
+#       # repeat_interval: 3h
+#       receiver: ops
+#       routes:
+#       - match_re:
+#           severity: 'critical'
+#         receiver: ops
+#     inhibit_rules:
+#     - source_match:
+#         severity: 'critical'
+#       target_match:
+#         severity: 'warning'
+#       equal: ['alertname', 'cluster', 'service']
+#     receivers:
+#     - name: 'ops'
+#       pagerduty_configs:
+#       - service_key: eMLh21WTATxZXa4CfwpP
+deployGrafana: false
+deployAlertManager: false
+exporter-kubelets:
+  https: false
+global:
+  rbacEnable: true
+prometheus:
+  replicaCount: 0
+serverFiles:
+  alerts: {}
+  rules: {}
+  # prometheus.yml:
+

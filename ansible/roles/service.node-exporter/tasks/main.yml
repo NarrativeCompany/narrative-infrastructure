@@ -1,0 +1,60 @@
+---
+- name: Install prometheus-node-exporter.
+  apt:
+    name: prometheus-node-exporter=0.16.0+ds-1~bpo9+1
+    default_release: stretch-backports
+    state: present
+    update_cache: yes
+
+- name: Create the prometheus-node-exporter options file.
+  copy:
+    src: prometheus-node-exporter
+    dest: /etc/default/prometheus-node-exporter
+  notify: restart_node_exporter
+
+- name: Make the text-collector directory.
+  file:
+    path: /opt/textfile_collector
+    state: directory
+    owner: prometheus
+
+- name: Create the neo-block-monitor.prom file with the correct permissions
+  file:
+    path: /opt/textfile_collector/neo-block-monitor.prom
+    state: touch
+    owner: bot-ops
+
+- name: Make the /opt/haproxy/ssl/prometheus-node-exporter directory.
+  file:
+    path: /opt/haproxy/ssl/prometheus-node-exporter
+    state: directory
+
+- name: Copy in the haproxy-prometheus TLS certificates.
+  copy:
+    src: "{{ item }}"
+    dest: "/opt/haproxy/ssl/prometheus-node-exporter/{{ item }}"
+  with_items:
+    - ca.pem
+    - server.pem
+    - server-key.pem
+
+- name: Combine server.pem, server-key.pem, and ca.pem into combined.pem.
+  shell: cat server.pem server-key.pem ca.pem > combined.pem
+  args:
+    chdir: /opt/haproxy/ssl/prometheus-node-exporter
+
+- name: Flush handlers (restart node_exporter if necessary).
+  meta: flush_handlers
+
+- name: Make sure prometheus-node-exporter service is started.
+  systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Make sure dbus service is started, it is required for the prometheus-node-exporter systemd function.
+  systemd:
+    name: dbus.socket
+    state: started
+    enabled: yes

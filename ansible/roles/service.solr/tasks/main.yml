@@ -1,0 +1,78 @@
+---
+# tasks file for service.solr
+- name: Create the /opt/solr/ directory.
+  file:
+    path: "{{ item }}"
+    owner: '8983'
+    state: directory
+  with_items:
+    - /opt/solr/configset1
+    - /opt/solr/data/
+
+- name: Template the schema and solrconfig files (WILL NOT UPDATE IF FILES EXIST - USE NARRATIVE-PLATFORM PLAYBOOK).
+  template:
+    src: "{{ item }}.j2"
+    dest: "/opt/solr/configset1/{{ item }}"
+    mode: '0400'
+    owner: '8983'
+    force: no
+  with_items:
+    - schema.xml
+    - solrconfig.xml
+    - stopwords.txt
+
+- name: Get the Google hostname.
+  shell: curl metadata.google.internal/computeMetadata/v1beta1/instance/hostname
+  register: google_hostname
+
+- name: Copy in the init script for docker-entrypoint-initdb.d.
+  copy:
+    content: init-solr-home
+    dest: /opt/solr/init-solr-home.sh
+    mode: '0555'
+
+- name: Template the solr systemd service file.
+  template:
+    src: solr.service.j2
+    dest: /etc/systemd/system/solr.service
+
+- name: Set the solr service to running.
+  systemd:
+    name: solr
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: If solr_restart is defined, restart solr.
+  systemd:
+    name: solr
+    state: restarted
+  when: solr_restart is defined
+
+- name: Wait for the zookeeper and solr service to start.
+  wait_for:
+    port: "{{ item }}"
+    delay: 1
+  with_items:
+    - 2181
+    - 8983
+
+- name: Check for the zookeeper configs.
+  shell: docker exec solr /bin/bash -c "/opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost localhost:2181 -cmd ls /configs | grep configset1 | awk '{ print $NF }'"
+  run_once: yes
+  register: zk_configset
+
+- name: If configset does not exist, create it.
+  shell: docker exec solr /bin/bash -c "/opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost localhost:2181 -cmd upconfig -confname configset1 -confdir /opt/configset1/"
+  run_once: yes
+  when: zk_configset.stdout.find('configset1') == -1 or update_configset is defined
+
+- name: Check for the narrative-platform collection.
+  shell: curl -s 'http://localhost:8983/solr/admin/collections?action=LIST' | jq -r '.collections[] | select(. == ("narrative-platform"))'
+  run_once: yes
+  register: narrative_collection
+
+- name: If the collection does not exist, create it.
+  shell: curl 'http://localhost:8983/solr/admin/collections?action=CREATE&name=narrative-platform&numShards=3&replicationFactor=3&maxShardsPerNode=-1&collection.configName=configset1'
+  run_once: yes
+  when: narrative_collection.stdout.find('narrative-platform') == -1

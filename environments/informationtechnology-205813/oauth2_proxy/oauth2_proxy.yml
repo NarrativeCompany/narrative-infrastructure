@@ -1,0 +1,63 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  labels:
+    k8s-app: oauth
+  name: oauth
+  namespace: default
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: oauth
+  template:
+    metadata:
+      labels:
+        k8s-app: oauth
+    spec:
+      containers:
+      - name: oauth
+        image: narrativecompany/oauth2_proxy:latest
+        args:
+        - --email-domain=narrative.org
+        - --upstream=file:///dev/null
+        - --http-address=0.0.0.0:4180
+        env:
+        - name: OAUTH2_PROXY_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oauth
+              key: OAUTH2_PROXY_CLIENT_ID
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth
+              key: OAUTH2_PROXY_CLIENT_SECRET
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth
+              key: OAUTH2_PROXY_COOKIE_SECRET
+        - name: OAUTH2_PROXY_PROVIDER
+          value: "google"
+        ports:
+        - containerPort: 4180
+          protocol: TCP
+      imagePullSecrets:
+        - name: narrativecompany-docker
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: oauth 
+  name: oauth
+  namespace: default
+spec:
+  ports:
+  - name: oauth
+    port: 4180
+    targetPort: 4180
+  selector:
+    k8s-app: oauth

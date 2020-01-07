@@ -1,0 +1,20 @@
+[Unit]
+Description=Narrative neo-payment service, monitors the blockchain for transactions.
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStartPre=-/usr/bin/docker rm neo-payment
+ExecStart=/usr/bin/docker run --name neo-payment \
+    --hostname neo-payment \
+    --net host \
+    -p 127.0.0.1:10332:10332 \
+    -p 127.0.0.1:10333:10333 \
+    -v {{ mount_path }}:/home/neo-user/.neopython \
+    -v {{ mount_path }}/config:/opt/neo-python/neo/contrib/narrative/config \
+    {{ neo_payment_docker_image }}
+ExecStop=-/usr/bin/docker stop neo-payment
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+groups:
+- name: disk.rules
+  rules:
+  - alert: DiskFree25
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'GCE instance has a disk that has less than 25% free space.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#diskfree25'
+    expr: node_filesystem_free_bytes / node_filesystem_size_bytes * 100 < 25
+    for: 5m
+    labels:
+      severity: warning
+  - alert: DiskFree15
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'GCE instance has a disk that has less than 15% free space.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#diskfree15'
+    expr: node_filesystem_free_bytes / node_filesystem_size_bytes * 100 < 15
+    for: 3m
+    labels:
+      severity: critical
+  - alert: DiskWillFillIn7Days
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'GCE instance has a disk that will fill up in under 7 days.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#diskfree15'
+    expr: predict_linear(node_filesystem_free{pod!~"kube-prometheus-exporter-node.*"}[1h], 168*3600) < 0
+    for: 3m
+    labels:
+      severity: warning
+  - alert: DiskWillFillIn72Hours
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'GCE instance has a disk that will fill up in under 72 hours.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#diskfree15'
+    expr: predict_linear(node_filesystem_free{pod!~"kube-prometheus-exporter-node.*"}[1h], 72*3600) < 0
+    for: 3m
+    labels:
+      severity: critical

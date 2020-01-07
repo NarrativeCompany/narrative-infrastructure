@@ -1,0 +1,29 @@
+groups:
+- name: general.rules
+  rules:
+  - alert: TargetDown
+    annotations:
+      identifier: '{{ $labels.job }}'
+      message: 'Target is down.'
+      runbook_url: N/A
+    expr: up{job!~"kube-state|kubernetes-service-endpoints",endpoint!~"metrics|cadvisor|http-metrics"} == 0
+    for: 4m
+    labels:
+      severity: warning
+  - alert: TargetDown
+    annotations:
+      identifier: '{{ $labels.job }}'
+      message: 'Target is down.'
+      runbook_url: N/A
+    expr: up{cluster!~"narrative-sandbox-cluster|narrative-staging-cluster",job!~"kube-state|kubernetes-service-endpoints",endpoint!~"metrics|cadvisor|http-metrics"} == 0
+    for: 6m
+    labels:
+      severity: critical
+  - alert: DeadMansSwitch
+    annotations:
+      identifier: 'Alertmanager'
+      message: 'This is a DeadMansSwitch, meant to ensure Alertmanager is functional.'
+      runbook_url: N/A
+    expr: vector(1)
+    labels:
+      severity: none

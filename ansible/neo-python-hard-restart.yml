@@ -1,0 +1,9 @@
+# This playbook is for when a NEO node gets stuck, and restarting the service doesn't work.
+# example: ansible-playbook -i inventory/neo neo-python-hard-restart.yml -e host=neo-01
+---
+- hosts: "{{ host }}"
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: action.neo-python-stop-and-delete
+    - role: service.neo-python

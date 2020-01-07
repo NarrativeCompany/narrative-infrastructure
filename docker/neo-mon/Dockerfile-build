@@ -1,0 +1,21 @@
+FROM node:8.11-jessie
+
+# Create the user
+RUN useradd user -m -s /bin/bash
+ENV HOME /opt/neo-mon-build
+
+WORKDIR /opt/neo-mon-build
+
+COPY ./ /opt/neo-mon-build
+
+RUN npm install -g bower
+
+RUN chown -R user:user /opt/neo-mon-build
+
+USER user
+
+RUN npm install
+
+RUN bower install
+
+ENTRYPOINT ["/opt/neo-mon-build/node_modules/.bin/gulp", "serve"]

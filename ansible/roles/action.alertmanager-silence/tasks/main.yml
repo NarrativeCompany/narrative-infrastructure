@@ -1,0 +1,37 @@
+---
+- name: Get RFC3339 date.
+  shell: date -u +"%Y-%m-%dT%H:%M:%SZ"
+  register: silence_start
+  changed_when: false
+
+- name: Set expiratioin date, expires in 60 minutes.
+  shell: date -u +"%Y-%m-%dT%H:%M:%SZ" -d '+{{ alertmanager_silence_duration | default('60') }} minutes'
+  register: silence_end
+  changed_when: false
+
+- name: Create Alertmanager silence.
+  uri:
+    url: "http://{{ alertmanager_url | default('alertmanager.it.svc.cluster.local:9093') }}/api/v1/silences"
+    method: POST
+    body: >
+      {
+        "startsAt": "{{ silence_start.stdout }}",
+        "endsAt": "{{ silence_end.stdout }}",
+        "createdBy":"ansible",
+        "matchers":
+          [
+            {
+              "name": "{{ alertmanager_silence_label_name }}",
+              "value": "{{ alertmanager_silence_label_value }}",
+              "isRegex": true
+            }
+          ],
+        "comment": "{{ alertmanager_silence_comment | default('Ansible silence.') }}"
+      }
+    status_code: 200,500
+    body_format: json
+  register: silence_value
+
+- name: Debug Alertmanager silence ID value.
+  debug:
+    msg: "{{ silence_value.json.data.silenceId }}"

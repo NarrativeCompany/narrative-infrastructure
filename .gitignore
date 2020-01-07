@@ -1,0 +1,9 @@
+**/.terraform
+*.zip
+**/.*.swp
+**/secrets.tf
+**/__pycache__/
+**/errored.tfstate
+**/options
+.idea
+*.iml

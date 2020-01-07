@@ -1,0 +1,10 @@
+[Unit]
+Description=Prints the host key to stdout.
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=3min
+Unit=ssh-print-hostkeys.service
+
+[Install]
+WantedBy=multi-user.target

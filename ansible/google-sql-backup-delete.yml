@@ -1,0 +1,41 @@
+# This playbook prunes the Google SQL backups with the supplied description down to count given for the specified instance in the specified project.
+#
+# Requires the -e (--extra-vars) option to pass in the project, instance, description, and count variables.
+#
+# Example command to prune Google SQL backups in sandbox with the Automated-Weekly description down to 12::
+# ansible-playbook google-sql-backup-delete.yml -e project=sandbox-narrative -e instance=dev-master -e description=Automated-Weekly -e count=12
+#
+---
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  tasks:
+    - name: Set variable facts.
+      set_fact:
+        project: "{{ project }}"
+        instance: "{{ instance }}"
+        description: "{{ description }}"
+        count: "{{ count }}"
+
+    - name: List Google SQL {{ description }} backups past {{ count }}.
+      shell: >
+         gcloud --project sandbox-narrative sql backups list -i dev-master --format json | jq -r '.[] | {description: .description, id: .id} | select(.description == "{{ description }}") | .id' | tail -n +{{ count | int + 1 }}
+      register: sql_backups
+
+    - name: Delete Google SQL backup
+      shell: >
+        gcloud --project {{ project }} sql backups delete {{ item }} -i {{ instance }} --quiet
+      with_items: "{{ sql_backups.stdout.split('\n') }}"
+      when: sql_backups.stdout != ""
+      async: 1000
+      poll: 0
+      register: delete_sql
+
+    - name: Check the Google SQL delete task.
+      async_status:
+        jid: "{{ delete_sql.ansible_job_id }}"
+      register: result_delete_sql
+      until: result_delete_sql.finished
+      retries: 360
+      delay: 10
+      when: (sql_backups.stdout != "") and (delete_sql.ansible_job_id is defined)

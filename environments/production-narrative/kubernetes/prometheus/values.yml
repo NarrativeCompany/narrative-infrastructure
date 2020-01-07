@@ -1,0 +1,8 @@
+deployGrafana: false
+deployAlertManager: false
+exporter-kubelets:
+  https: false
+global:
+  rbacEnable: true
+prometheus:
+  replicaCount: 0

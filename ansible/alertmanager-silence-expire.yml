@@ -1,0 +1,10 @@
+# This playbook will expire silence alerts for the specified alert settings.
+# It will accept `alertmanager_url`, which will default to `alertmanager.it.svc.cluster.local:9093`
+# Requires the variable `alertmanager_silence_label_name`. The name of the label, such as `gce_instance_name`.
+# Requires the variable `alertmanager_silence_label_value`. The name of the label, such as `neo-database-01`.
+---
+- hosts: localhost
+  become: no
+  gather_facts: no
+  roles:
+    - role: action.alertmanager-silence-expire

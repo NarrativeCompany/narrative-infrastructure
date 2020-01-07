@@ -1,0 +1,99 @@
+# This is the playbook to update the solr instance
+---
+- name: Get the Google hostname for all hosts.
+  hosts: tag_solr 
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Get the Google hostname.
+      shell: curl metadata.google.internal/computeMetadata/v1beta1/instance/hostname
+      register: google_hostname
+      args:
+        warn: false
+
+    - name: Debug Google hostname.
+      debug:
+        msg: "{{ google_hostname.stdout }}"
+
+- name: Update Solr.
+  hosts: tag_solr
+  become: yes
+  gather_facts: yes
+  serial: 1
+  vars:
+    host_count: "{{ groups['tag_solr'] | length }}"
+  tasks:
+    - name: Find the Solr nodes.
+      shell: >
+        docker exec solr /bin/bash -c "/opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost localhost:2181 --cmd get /autoscaling/triggerState/.auto_add_replicas" | jq -r ".lastLiveNodes[]" | awk -F":" '{ print $1 }'
+      changed_when: false
+      register: solr_nodes
+
+    - name: Debug
+      debug:
+        msg: "The Solr nodes are: {{ solr_nodes.stdout_lines }}"
+
+    - name: Fail if any Solr nodes are not active.
+      fail: 
+        msg: "Not all Solr nodes are active. Exiting"
+      when: solr_nodes.stdout_lines | length < host_count | int
+
+    - name: Shutdown Solr
+      systemd:
+        name: solr
+        state: stopped
+
+    - name: Update apt
+      apt: 
+        upgrade: dist
+ 
+    - name: Update docker
+      debug:
+        msg: "TODO"
+
+    - name: Template the solr systemd service file.
+      template:
+        src: solr.service.j2
+        dest: /etc/systemd/system/solr.service
+
+    - name: Show current image
+      debug:
+        msg: "Solr Docker image: {{ solr_docker_image }}"
+
+    - name: Pull new solr image
+      shell: docker pull {{ solr_docker_image }} | grep 'Image is up to date' | awk '{ print $NF }'
+      register: solr_pull
+      changed_when: solr_pull.stdout == ""
+
+    - name: Systemd daemon-reload
+      command: systemctl daemon-reload 
+      changed_when: false
+
+    - name: Reboot system.
+      shell: "sleep 1 && reboot"
+      async: 1
+      poll: 0
+
+    - name: Wait for the reboot to complete.
+      wait_for_connection:
+        sleep: 5
+        delay: 5
+        timeout: 300
+
+    - name: Wait for the zookeeper and solr services to start.
+      wait_for:
+        port: "{{ item }}"
+        delay: 5
+      with_items:
+        - 2181
+        - 8983
+
+    - name: Find the Solr nodes.
+      shell: >
+        docker exec solr /bin/bash -c "/opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost localhost:2181 --cmd get /autoscaling/triggerState/.auto_add_replicas" | jq -r ".lastLiveNodes[]" | awk -F":" '{ print $1 }'
+      changed_when: false
+      register: solr_nodes
+
+    - name: Debug
+      debug:
+        msg: "The Solr nodes are: {{ solr_nodes.stdout_lines }}"

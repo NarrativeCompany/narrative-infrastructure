@@ -1,0 +1,10 @@
+[Unit]
+Description=Writes the current block height to a file for Prometheus node_exporter.
+
+[Service]
+Type=simple
+User=bot-ops
+ExecStart=/usr/local/bin/neo-block-monitor.sh
+
+[Install]
+WantedBy=multi-user.target

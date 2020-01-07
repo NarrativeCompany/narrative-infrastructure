@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: service.disable-unattended-upgrades
+    - role: service.ssh-print-hostkeys
+    - role: service.journald
+    - role: service.ipset-blacklist
+    - role: service.fail2ban
+    - role: service.google-fluentd

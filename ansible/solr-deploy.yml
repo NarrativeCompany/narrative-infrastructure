@@ -1,0 +1,21 @@
+---
+- hosts: tag_solr
+  any_errors_fatal: yes
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: instance.packages
+      tags:
+        - packages
+    - role: service.docker
+    - role: instance.format-sdb
+    - role: service.zookeeper
+      tags:
+        - zookeeper
+    - role: service.solr
+      tags:
+        - solr
+    # - role: service.solr-exporter # not built yet
+    - role: service.node-exporter
+    - role: service.haproxy
+

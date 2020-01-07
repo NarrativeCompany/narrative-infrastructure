@@ -1,0 +1,39 @@
+---
+- name: Download and extract prometheus/haproxy_exporter to /opt.
+  unarchive:
+    src: https://github.com/prometheus/haproxy_exporter/releases/download/v{{ haproxy_exporter_version }}/haproxy_exporter-{{ haproxy_exporter_version }}.linux-amd64.tar.gz
+    dest: /opt
+    remote_src: yes
+
+- name: Move the haproxy_exporter binary to /usr/local/bin.
+  command: mv haproxy_exporter /usr/local/bin
+  args:
+    chdir: /opt/haproxy_exporter-{{ haproxy_exporter_version }}.linux-amd64
+
+- name: Remove haproxy_exporter directory.
+  file:
+    path: /opt/haproxy_exporter-{{ haproxy_exporter_version }}.linux-amd64
+    state: absent
+
+- name: Copy the haproxy_exporter default file.
+  copy:
+    src: haproxy_exporter
+    dest: /etc/default/haproxy_exporter
+  notify: restart_haproxy_exporter
+
+- name: Copy the haproxy-exporter service file.
+  copy:
+    src: haproxy-exporter.service
+    dest: /etc/systemd/system/haproxy-exporter.service
+  notify: restart_haproxy_exporter
+
+- name: Flush handlers (restart haproxy_exporter if necessary).
+  meta: flush_handlers
+
+- name: Make sure haproxy-exporter service is started.
+  systemd:
+    name: haproxy-exporter
+    state: started
+    enabled: yes
+    daemon_reload: yes
+

@@ -1,0 +1,19 @@
+[Unit]
+Description=Cloud sql proxy service.
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStartPre=-/usr/bin/docker rm cloudsql-proxy
+ExecStart=/usr/bin/docker run --name cloudsql-proxy \
+    --hostname cloudsql-proxy \
+    --net host \
+    -v /opt/cloudsql:/cloudsql \
+    -p 127.0.0.1:3306:3306 \
+    {{ cloudsql_proxy_docker_image }} /cloud_sql_proxy \
+    -instances={{ project }}:{{ zone }}:{{ instance }}=tcp:0.0.0.0:3306 -credential_file=/cloudsql/creds.json
+ExecStop=-/usr/bin/docker stop cloudsql-proxy
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+---
+- hosts: tag_neo-pay
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: instance.packages
+    - role: service.docker
+    - role: instance.format-sdb
+    - role: service.cloudsql-proxy
+    - role: service.postfix
+    - role: service.neo-payment
+      tags:
+        - neo-payment
+    - role: service.node-exporter
+    - role: service.haproxy

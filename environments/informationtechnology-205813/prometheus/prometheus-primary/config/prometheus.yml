@@ -1,0 +1,315 @@
+# my global config
+global:
+  scrape_interval:     30s # Set the scrape interval to every 30 seconds. Default is every 1 minute.
+  evaluation_interval: 30s # Evaluate rules every 30 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "/etc/prometheus/rules/*.rules"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['localhost:9090']
+      labels:
+        cluster: 'primary'
+  ## federation job
+  - job_name: 'federation-internal'
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      match[]:
+        - '{job=~".+", __name__!="ALERTS", __name__!="ALERTS_FOR_STATE"}'
+    scheme: http
+    static_configs:
+      - targets:
+        - 'prometheus.monitoring.svc.cluster.local:9090'
+        labels:
+          cluster: 'narrative-it-cluster'
+  - job_name: 'federation-sandbox'
+    basic_auth:
+      username: narrative-prometheus-federation-2018-Chaucer
+      password_file: /opt/narrative-prometheus-federation/password_file
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      match[]:
+        - '{job=~".+", __name__!="ALERTS", __name__!="ALERTS_FOR_STATE"}'
+    scheme: https
+    static_configs:
+      - targets:
+        - 'sandbox-prometheus-federation.narrative.cloud:443'
+        labels:
+          cluster: 'narrative-sandbox-cluster'
+  - job_name: 'federation-staging'
+    basic_auth:
+      username: narrative-prometheus-federation-2018-Chaucer
+      password_file: /opt/narrative-prometheus-federation/password_file
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      match[]:
+        - '{job=~".+", __name__!="ALERTS", __name__!="ALERTS_FOR_STATE"}'
+    scheme: https
+    static_configs:
+      - targets:
+        - 'staging-prometheus-federation.narrative.cloud:443'
+        labels:
+          cluster: 'narrative-staging-cluster'
+  - job_name: 'federation-production'
+    basic_auth:
+      username: narrative-prometheus-federation-2018-Chaucer
+      password_file: /opt/narrative-prometheus-federation/password_file
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      match[]:
+        - '{job=~".+", __name__!="ALERTS", __name__!="ALERTS_FOR_STATE"}'
+    scheme: https
+    static_configs:
+      - targets:
+        - 'production-prometheus-federation.narrative.cloud:443'
+        labels:
+          cluster: 'narrative-production-cluster'
+  # Blackbox Configurations
+  - job_name: 'blackbox-about.narrative.org'
+    metrics_path: /probe
+    params:
+      module: [about_narrative_org]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - https://about.narrative.org   # Target to probe with https.
+        labels:
+          cluster: 'primary'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc.cluster.local:9115  # The blackbox exporter's real hostname:port.
+  - job_name: 'blackbox-www.narrative.org'
+    metrics_path: /probe
+    params:
+      module: [www_narrative_org]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - https://www.narrative.org   # Target to probe with https.
+        labels:
+          cluster: 'primary'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc.cluster.local:9115  # The blackbox exporter's real hostname:port.
+  - job_name: 'blackbox-www.narrative.org-hq'
+    metrics_path: /probe
+    params:
+      module: [www_hq]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - https://www.narrative.org/hq   # Target to probe with https.
+        labels:
+          cluster: 'primary'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc.cluster.local:9115  # The blackbox exporter's real hostname:port.
+  - job_name: 'blackbox-www.narrative.org-api-niches'
+    metrics_path: /probe
+    params:
+      module: [api_niches]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - https://www.narrative.org/api/niches   # Target to probe with https.
+        labels:
+          cluster: 'primary'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc.cluster.local:9115  # The blackbox exporter's real hostname:port.
+  - job_name: 'blackbox-tokensale.narrative.network'
+    metrics_path: /probe
+    params:
+      module: [tokensale_narrative_network]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - https://tokensale.narrative.network   # Target to probe with https.
+        labels:
+          cluster: 'primary'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc.cluster.local:9115  # The blackbox exporter's real hostname:port.
+  - job_name: 'neo-narrative-prometheus-node-exporter'
+    gce_sd_configs:
+      - zone: us-east1-b
+        project: neo-narrative
+        port: 9143
+      - zone: us-east1-c
+        project: neo-narrative
+        port: 9143
+      - zone: us-east1-d
+        project: neo-narrative
+        port: 9143
+      - zone: us-west1-a
+        project: neo-narrative
+        port: 9143
+      - zone: us-west1-b
+        project: neo-narrative
+        port: 9143
+      - zone: us-west1-c
+        project: neo-narrative
+        port: 9143
+      - zone: europe-west2-a
+        project: neo-narrative
+        port: 9143
+      - zone: europe-west2-b
+        project: neo-narrative
+        port: 9143
+      - zone: europe-west2-c
+        project: neo-narrative
+        port: 9143
+      - zone: europe-west4-a
+        project: neo-narrative
+        port: 9143
+      - zone: europe-west4-b
+        project: neo-narrative
+        port: 9143
+      - zone: europe-west4-c
+        project: neo-narrative
+        port: 9143
+    relabel_configs:
+    - source_labels:
+      - __meta_gce_public_ip
+      target_label: __address__
+      replacement: ${1}:9143
+    - source_labels:
+      - __meta_gce_instance_name
+      target_label: gce_instance_name
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_private_ip
+      target_label: gce_private_ip
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_public_ip
+      target_label: gce_public_ip
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_project
+      target_label: gce_project
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_tags
+      regex: ".*,prometheus-node-exporter,.*"
+      action: keep
+    - source_labels:
+      - __meta_gce_instance_status
+      regex: RUNNING
+      action: keep
+    - target_label: 'cluster'
+      replacement: neo
+    scheme: https
+    tls_config:
+      server_name: 'prometheus.narrative.org'
+      ca_file: /opt/prometheus-tls-client-ca/ca.pem
+      cert_file: /opt/prometheus-tls-client/tls.crt
+      key_file: /opt/prometheus-tls-client/tls.key
+  - job_name: 'neo-narrative-haproxy-exporter'
+    gce_sd_configs:
+      - zone: us-east1-b
+        project: neo-narrative
+        port: 9144
+      - zone: us-east1-c
+        project: neo-narrative
+        port: 9144
+      - zone: us-east1-d
+        project: neo-narrative
+        port: 9144
+      - zone: us-west1-a
+        project: neo-narrative
+        port: 9144
+      - zone: us-west1-b
+        project: neo-narrative
+        port: 9144
+      - zone: us-west1-c
+        project: neo-narrative
+        port: 9144
+      - zone: europe-west2-a
+        project: neo-narrative
+        port: 9144
+      - zone: europe-west2-b
+        project: neo-narrative
+        port: 9144
+      - zone: europe-west2-c
+        project: neo-narrative
+        port: 9144
+      - zone: europe-west4-a
+        project: neo-narrative
+        port: 9144
+      - zone: europe-west4-b
+        project: neo-narrative
+        port: 9144
+      - zone: europe-west4-c
+        project: neo-narrative
+        port: 9144
+    relabel_configs:
+    - source_labels:
+      - __meta_gce_public_ip
+      target_label: __address__
+      replacement: ${1}:9144
+    - source_labels:
+      - __meta_gce_instance_name
+      target_label: gce_instance_name
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_private_ip
+      target_label: gce_private_ip
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_public_ip
+      target_label: gce_public_ip
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_project
+      target_label: gce_project
+      replacement: ${1}
+    - source_labels:
+      - __meta_gce_tags
+      regex: ".*,haproxy-exporter,.*"
+      action: keep
+    - source_labels:
+      - __meta_gce_instance_status
+      regex: RUNNING
+      action: keep
+    - target_label: 'cluster'
+      replacement: neo
+    scheme: https
+    tls_config:
+      server_name: 'prometheus.narrative.org'
+      ca_file: /opt/prometheus-tls-client-ca/ca.pem
+      cert_file: /opt/prometheus-tls-client/tls.crt
+      key_file: /opt/prometheus-tls-client/tls.key

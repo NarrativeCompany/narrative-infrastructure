@@ -1,0 +1,18 @@
+---
+# tasks file for service.postfix
+
+- name: Create the postfix.service file.
+  template:
+    src: postfix.service.j2
+    dest: /etc/systemd/system/postfix.service
+  notify: restart_postfix
+
+- name: Flush handlers (restart postfix if necessary).
+  meta: flush_handlers
+
+- name: Start postfix.
+  systemd:
+    name: postfix
+    state: started
+    enabled: yes
+    daemon_reload: yes

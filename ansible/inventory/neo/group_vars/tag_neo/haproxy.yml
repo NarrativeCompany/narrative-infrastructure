@@ -1,0 +1,77 @@
+haproxy_frontend:
+  - |
+      frontend http-in
+          bind 0.0.0.0:80
+          capture request header Host len 32
+          reqidel ^Is-Secure:.*
+          redirect scheme https if !{ ssl_fc }
+
+  - |
+      frontend https-in
+          bind 0.0.0.0:443 ssl crt /opt/haproxy/ssl/star.narrative.org.pem
+          capture request header Host len 32
+          reqadd Is-Secure:\ true
+          acl is_metrics path_beg /metrics
+          acl is_pyrpc hdr_reg(host) -i pyrpc[^.]*.narrative.org
+          acl is_pyrest hdr_reg(host) -i pyrest[^.]*.narrative.org
+          use_backend pyrpc_backend if is_pyrpc
+          use_backend pyrest_backend if is_pyrest
+          default_backend deadend_backend
+  
+  - |
+      frontend https-prometheus-in
+          bind 0.0.0.0:9143 ssl crt /opt/haproxy/ssl/prometheus-node-exporter/combined.pem ca-file /opt/haproxy/ssl/prometheus-node-exporter/ca.pem verify required
+          capture request header Host len 32
+          reqadd Is-Secure:\ true
+          acl is_prometheus_metrics path_beg /metrics
+          use_backend prometheus_metrics_backend if is_prometheus_metrics
+          default_backend prometheus_backend
+
+  - |
+      frontend https-haproxy-in
+          bind 0.0.0.0:9144 ssl crt /opt/haproxy/ssl/prometheus-node-exporter/combined.pem ca-file /opt/haproxy/ssl/prometheus-node-exporter/ca.pem verify required
+          capture request header Host len 32
+          reqadd Is-Secure:\ true
+          acl is_haproxy_metrics path_beg /metrics
+          use_backend haproxy_metrics_backend if is_haproxy_metrics
+          default_backend haproxy_backend
+
+haproxy_backend:
+  - |
+      backend prometheus_backend
+          server prometheus 127.0.0.1:9100
+
+  - |
+      backend prometheus_metrics_backend
+          server prometheus-metrics 127.0.0.1:9100/metrics
+
+  - |
+      backend haproxy_backend
+          server haproxy 127.0.0.1:9101
+
+  - |
+      backend haproxy_metrics_backend
+          server haproxy-metrics 127.0.0.1:9101/metrics
+
+  - |
+      backend pyrpc_backend
+          server pyrpc 127.0.0.1:10332
+
+  - |
+      backend pyrest_backend
+          server pyrest 127.0.0.1:10333
+
+  - |
+      backend deadend_backend
+          http-request deny
+
+haproxy_stats:
+  - |
+      listen stats
+          bind 127.0.0.1:9000
+          mode http
+          stats enable
+          stats hide-version
+          stats realm Haproxy\ Statistics
+          stats uri /haproxy_stats
+

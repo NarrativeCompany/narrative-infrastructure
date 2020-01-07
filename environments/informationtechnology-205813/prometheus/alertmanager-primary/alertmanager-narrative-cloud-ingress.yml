@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-signin: https://$host/oauth2/start
+    nginx.ingress.kubernetes.io/auth-url: http://oauth.default.svc.cluster.local:4180/oauth2/auth
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  name: alertmanager
+  namespace: it
+spec:
+  rules:
+  - host: alertmanager.narrative.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: alertmanager
+          servicePort: 9093
+  tls:
+  - secretName: cloudflare-wildcard-narrative-cloud
+    hosts:
+      - alertmanager.narrative.cloud
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: oauth-alertmanager
+  namespace: default
+spec:
+  rules:
+  - host: alertmanager.narrative.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: oauth
+          servicePort: 4180
+        path: /oauth2
+  tls:
+  - secretName: cloudflare-wildcard-narrative-cloud
+    hosts:
+      - alertmanager.narrative.cloud
+

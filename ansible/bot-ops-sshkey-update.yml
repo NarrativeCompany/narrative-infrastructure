@@ -1,0 +1,8 @@
+# This playbook will update the bot-ops authorized_keys file 
+# https://github.com/NarrativeCompany/narrative-infrastructure/wiki/bot-ops-SSH-Key-Rotation
+---
+- hosts: all
+  become: no
+  gather_facts: no
+  roles:
+    - role: service.bot-ops_authorized_keys

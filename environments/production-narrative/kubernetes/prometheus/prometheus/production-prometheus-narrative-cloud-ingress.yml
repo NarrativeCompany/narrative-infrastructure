@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-signin: https://$host/oauth2/start
+    nginx.ingress.kubernetes.io/auth-url: http://oauth.default.svc.cluster.local:4180/oauth2/auth
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: "monitoring"
+  name: production-prometheus
+  namespace: monitoring
+spec:
+  rules:
+  - host: production-prometheus.narrative.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: prometheus
+          servicePort: 9090
+  tls:
+  - secretName: cloudflare-wildcard-narrative-cloud
+    hosts:
+      - production-prometheus.narrative.cloud
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "monitoring"
+  name: oauth-production-prometheus
+  namespace: default
+spec:
+  rules:
+  - host: production-prometheus.narrative.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: oauth
+          servicePort: 4180
+        path: /oauth2
+  tls:
+  - secretName: cloudflare-wildcard-narrative-cloud
+    hosts:
+      - production-prometheus.narrative.cloud
+

@@ -1,0 +1,7 @@
+---
+- name: restart_neo-payment
+  systemd:
+    name: neo-payment
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

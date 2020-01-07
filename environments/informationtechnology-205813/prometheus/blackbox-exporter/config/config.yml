@@ -1,0 +1,94 @@
+modules:
+  http_2xx:
+    prober: http
+    http:
+      valid_status_codes: [200,401,403]  # Defaults to 2xx
+      method: GET
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # used for "tcp", defaults to "ip4"
+  about_narrative_org:
+    prober: http
+    http:
+      valid_status_codes: [200,401]  # Defaults to 2xx
+      method: GET
+      fail_if_not_matches_regexp:
+        - "It’s time for content creators to get rewarded"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: true
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # used for "tcp", defaults to "ip4"
+  www_narrative_org:
+    prober: http
+    http:
+      valid_status_codes: [200,401]  # Defaults to 2xx
+      method: GET
+      headers:
+        User-Agent: googlebot
+      fail_if_not_matches_regexp:
+        - "Narrative is a member-run network"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # used for "tcp", defaults to "ip4"
+  www_hq:
+    prober: http
+    http:
+      valid_status_codes: [200,401]  # Defaults to 2xx
+      method: GET
+      headers:
+        User-Agent: googlebot
+      fail_if_not_matches_regexp:
+        - "The HQ is the place where members suggest"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # used for "tcp", defaults to "ip4"
+  api_niches:
+    prober: http
+    http:
+      valid_status_codes: [200,401]  # Defaults to 2xx
+      method: GET
+      fail_if_not_matches_regexp:
+        - "PageInfo"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # used for "tcp", defaults to "ip4"
+  tokensale_narrative_network:
+    prober: http
+    http:
+      valid_status_codes: [200,401]  # Defaults to 2xx
+      method: GET
+      fail_if_not_matches_regexp:
+        - "The Narrative Token Sale has ended and all NRVE tokens have been issued to our contributors"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4" # used for "tcp", defaults to "ip4"
+  http_post_2xx:
+    prober: http
+    http:
+      method: POST
+  tcp_connect:
+    prober: tcp
+  ssh_banner:
+    prober: tcp
+    tcp:
+      query_response:
+      - expect: "^SSH-2.0-"
+  icmp:
+    prober: icmp

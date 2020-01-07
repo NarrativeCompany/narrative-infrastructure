@@ -1,0 +1,17 @@
+[Unit]
+Description=Narrative neo-python service.
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStartPre=-/usr/bin/docker rm neo-python
+ExecStart=/usr/bin/docker run --name neo-python \
+    --hostname neo-python \
+    --net host \
+    -v /opt/neo-python:/home/neo-user/.neopython \
+    {{ neo_python_docker_image }}
+ExecStop=-/usr/bin/docker stop neo-python
+
+[Install]
+WantedBy=multi-user.target

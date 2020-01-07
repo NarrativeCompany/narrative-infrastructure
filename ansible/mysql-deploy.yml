@@ -1,0 +1,8 @@
+---
+- hosts: tag_mysql
+  any_errors_fatal: yes
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: instance.packages
+    - role: service.docker

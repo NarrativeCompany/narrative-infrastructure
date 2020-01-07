@@ -1,0 +1,12 @@
+# This playbook will silence alerts for the values found in `alertmanager_silence`.
+# It will accept `alertmanager_url`, which will default to `alertmanager.it.svc.cluster.local:9093`
+# It will accept `alertmanager_silence_duration` which will default to `60` (for 60 minutes).
+# Requires the variable `alertmanager_silence_label_name`. The name of the label, such as `gce_instance_name`.
+# Requires the variable `alertmanager_silence_label_value`. The name of the label, such as `neo-database-01`.
+# It will accept `alertmanager_silence_comment` which will default to `Ansible silence.`
+---
+- hosts: localhost
+  become: no
+  gather_facts: no
+  roles:
+    - role: action.alertmanager-silence

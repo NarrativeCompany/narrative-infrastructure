@@ -1,0 +1,41 @@
+groups:
+- name: kube-pod-rules.rules
+  rules:
+  - alert: KubeHPAScaleUp
+    annotations:
+      message: HPA scale up event occured with {{ $labels.hpa }}.
+      runbook_url: N/A
+    expr: irate(kube_hpa_status_current_replicas[1m]) > 0
+    labels:
+      severity: warning
+  - alert: KubePodContainerRestart
+    annotations:
+      message: Pod {{ $labels.pod }} has restarted. Pod may be having issues.
+      runbook_url: N/A
+    expr: irate(kube_pod_container_status_restarts_total[1m]) > 0
+    labels:
+      severity: warning
+  - alert: KubePodContainerRestart
+    annotations:
+      message: Pod {{ $labels.pod }} has restarted. Pod may be having issues.
+      runbook_url: N/A
+    expr: irate(kube_pod_container_status_restarts_total[1m]) > 0
+    for: 5m
+    labels:
+      severity: critical
+  - alert: KubePodNotReady
+    annotations:
+      message: Pod {{ $labels.pod }} is not ready. There may be a problem.
+      runbook_url: N/A
+    expr: kube_pod_status_ready{condition="true"} == 0
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubePodNotReady
+    annotations:
+      message: Pod {{ $labels.pod }} is not ready. There may be a problem.
+      runbook_url: N/A
+    expr: kube_pod_status_ready{condition="true"} == 0
+    for: 20m
+    labels:
+      severity: critical

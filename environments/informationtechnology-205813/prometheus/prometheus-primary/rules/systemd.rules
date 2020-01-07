@@ -1,0 +1,20 @@
+groups:
+- name: systemd.rules
+  rules:
+  - alert: SystemdFailed
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'A systemd service has failed.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#systemdfailed'
+    expr: node_systemd_unit_state{state="failed"} == 1
+    labels:
+      severity: warning
+  - alert: SystemdFailed
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'A systemd service has failed.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#systemdfailed'
+    expr: node_systemd_unit_state{state="failed"} == 1
+    for: 15m
+    labels:
+      severity: critical

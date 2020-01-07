@@ -1,0 +1,21 @@
+[Unit]
+Description=The Narrative Zookeeper service.
+After=docker.service
+
+[Service]
+Type=simple
+TimeoutStartSec=60
+ExecStartPre=-/usr/bin/docker rm zookeeper
+ExecStart=/usr/bin/docker run --name zookeeper \
+  --net=host \
+  -v /opt/zookeeper/data:/var/zookeeper \
+  -v /opt/zookeeper/zoo.cfg:/conf/zoo.cfg \
+  -e ZOO_MY_ID={{ zookeeper_id.stdout }} \
+  -e ZOO_STANDALONE_ENABLED=false \
+  {{ zookeeper_docker_image }}
+ExecStop=-/usr/bin/docker stop zookeeper
+
+[Install]
+WantedBy=multi-user.target
+
+# -e ZOO_SERVERS="{% for each in groups['tag_solr'] %}{% if inventory_hostname == hostvars[each]['google_hostname']['stdout'].split('.')[0] %}server.{{ hostvars[each]['zookeeper_id']['stdout'] }}=0.0.0.0:2888:3888{% else %}server.{{ hostvars[each]['zookeeper_id']['stdout'] }}={{ hostvars[each]['google_hostname']['stdout'] }}:2888:3888{% endif %}{% if not loop.last %} {% endif %}{% endfor %}" \ 

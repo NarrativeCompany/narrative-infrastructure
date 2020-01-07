@@ -1,0 +1,22 @@
+[Unit]
+Description=The Narrative Solr service.
+After=docker.service
+
+[Service]
+Type=simple
+TimeoutStartSec=60
+ExecStartPre=-/usr/bin/docker rm solr
+ExecStart=/usr/bin/docker run --name solr \
+  --net=host \
+  -e INIT_SOLR_HOME=yes \
+  -e SOLR_HOME=/opt/narrative \
+  -v /opt/solr/configset1:/opt/configset1 \
+  -v /opt/solr/data:/opt/narrative \
+  -v /opt/solr/init-solr-home.sh:/docker-entrypoint-initdb.d/init-solr-home.sh \
+  {{ solr_docker_image }} \
+  -f -c -z {% for each in groups['tag_solr'] %}{{ hostvars[each]['google_hostname']['stdout'] }}:2181{% if not loop.last %},{% endif %}{% endfor %} -noprompt
+
+ExecStop=-/usr/bin/docker stop solr
+
+[Install]
+WantedBy=multi-user.target

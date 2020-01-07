@@ -1,0 +1,7 @@
+---
+- name: restart_postfix
+  systemd:
+    name: postfix
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

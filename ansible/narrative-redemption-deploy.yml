@@ -1,0 +1,20 @@
+# This playbook will setup the narrative-redemption-01 VM in the neo-narrative project
+# and install the narrative-redemption docker container.
+
+# For TestNet: ansible-playbook -i inventory/neo narrative-redemption-deploy.yml -e option='-t'
+# For MainNet: ansible-playbook -i inventory/neo narrative-redemption-deploy.yml -e option='-m'
+---
+- hosts: narrative-redemption-01
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: instance.packages
+    - role: service.docker
+  tasks:
+    - name: Set variable facts.
+      set_fact:
+        option: "{{ option }}"
+
+    - name: Start the narrative-redemption Docker image.
+      shell: >
+        docker run -d --net host --name narrative-redemption narrativecompany/narrative-redemption:2019-09-20 {{ option }}

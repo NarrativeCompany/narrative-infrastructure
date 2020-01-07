@@ -1,0 +1,188 @@
+---
+- name: Copy in google-cloud-sdk apt repo.
+  copy:
+    src: google-cloud-sdk.list
+    dest: /etc/apt/sources.list.d/google-cloud-sdk.list
+
+- name: Install Google apt key.
+  shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+  changed_when: false
+
+- name: Verify the key has been installed.
+  shell: apt-key fingerprint apt-key fingerprint BA07F4FB | grep 54A6
+  changed_when: false
+
+- name: Install google-cloud-sdk.
+  apt:
+    name: google-cloud-sdk
+    state: present
+    update_cache: yes
+
+- name: Copy the neo-database-upload Google Cloud key.
+  copy:
+    content: "{{ vault_neo_database_google_credentials }}"
+    dest: /root/gcloud.json
+    mode: 0400
+
+- name: Authenticate.
+  shell: gcloud auth activate-service-account neo-database-upload@informationtechnology-205813.iam.gserviceaccount.com --key-file=/root/gcloud.json
+
+- name: Stop the neo-python service.
+  service:
+    name: neo-python
+    state: stopped
+    enabled: yes
+
+- name: Pause 5 seconds to let service stop.
+  pause:
+    seconds: 5
+
+- name: Get the neo-python Docker image tag.
+  shell: docker inspect neo-python | jq -r '.[].Config.Labels.GIT_TAG'
+  register: GIT_TAG
+
+- name: Get the last block.
+  shell: journalctl -u neo-python | grep MainNet | awk '{ print $12 }' | tail -n 1
+  register: neo_block
+
+- name: Get the date.
+  shell: date +%F
+  register: neo_date
+
+- name: Set filename facts.
+  set_fact:
+    neo_main: "Main_{{ neo_block.stdout }}_{{ GIT_TAG.stdout }}.tar.gz"
+    neo_main_latest: "Main_latest.tar.gz"
+    neo_main_notify: "Main_Notif_{{ neo_block.stdout }}_{{ GIT_TAG.stdout }}.tar.gz"
+    neo_main_notify_latest: "Main_Notif_latest.tar.gz"
+
+- name: Debug.
+  debug:
+    msg: "{{ neo_main }} - {{ neo_main_notify }}"
+
+- name: Create the NEO main tar file.
+  shell: tar -czvf {{ neo_main }} Chains/Main
+  args:
+    chdir: /opt/neo-python
+  async: 3600
+  poll: 0
+  register: main_tar
+
+- name: Check the NEO main tar file task.
+  async_status:
+    jid: "{{ main_tar.ansible_job_id }}"
+  register: result_main
+  until: result_main.finished
+  retries: 360
+  delay: 10
+
+- name: Create the NEO main notif tar file.
+  shell: tar -czvf {{ neo_main_notify }} Chains/Main_Notif
+  args:
+    chdir: /opt/neo-python
+  async: 3600
+  poll: 0
+  register: main_notif_tar
+
+- name: Check the NEO main_notif tar file task.
+  async_status:
+    jid: "{{ main_notif_tar.ansible_job_id }}"
+  register: result_main_notif
+  until: result_main_notif.finished
+  retries: 360
+  delay: 10
+
+- name: Get the shasum of the database file.
+  shell: shasum {{ neo_main }} | awk '{ print $1 }'
+  args:
+    chdir: /opt/neo-python
+  register: shasum_main
+
+- name: Get the shasum of the notify file.
+  shell: shasum {{ neo_main_notify }} | awk '{ print $1 }'
+  args:
+    chdir: /opt/neo-python
+  register: shasum_main_notify
+
+- name: Start neo-python back up.
+  service:
+    name: neo-python
+    state: started
+    enabled: yes
+
+- name: Upload the files to the Google bucket.
+  shell: gsutil cp /opt/neo-python/{{ item }} gs://neo-python-chain.narrative.org/{{ item }}
+  with_items:
+    - "{{ neo_main }}"
+    - "{{ neo_main_notify }}"
+
+- name: Copy the database files to the "latest".
+  shell: gsutil cp gs://neo-python-chain.narrative.org/{{ neo_main }} gs://neo-python-chain.narrative.org/{{ neo_main_latest }}
+
+- name: Copy the database notify files to the "latest".
+  shell: gsutil cp gs://neo-python-chain.narrative.org/{{ neo_main_notify }} gs://neo-python-chain.narrative.org/{{ neo_main_notify_latest }}
+
+- name: Create the shasum file.
+  shell: echo "{{ shasum_main.stdout }}  {{ neo_main }}" > shasum_{{ neo_block.stdout }}.txt
+  args:
+    chdir: /opt/neo-python
+
+- name: Add the notify to the shasum file.
+  shell: echo "{{ shasum_main_notify.stdout }}  {{ neo_main_notify }}" >> shasum_{{ neo_block.stdout }}.txt
+  args:
+    chdir: /opt/neo-python
+
+- name: Create the shasum latest file.
+  shell: echo "{{ shasum_main.stdout }}  Main_latest.tar.gz" > shasum_latest.txt
+  args:
+    chdir: /opt/neo-python
+
+- name: Add the notify to the shasum latest file.
+  shell: echo "{{ shasum_main_notify.stdout }}  Main_Notify_latest.tar.gz" >> shasum_latest.txt
+  args:
+    chdir: /opt/neo-python
+
+- name: Upload the shasums.
+  shell: gsutil cp /opt/neo-python/{{ item }} gs://neo-python-chain.narrative.org/{{ item }}
+  with_items:
+    - "shasum_{{ neo_block.stdout }}.txt"
+    - "shasum_latest.txt"
+
+- name: Remove the tar files.
+  file:
+    path: "/opt/neo-python/{{ item }}"
+    state: absent
+  with_items:
+    - "{{ neo_main }}"
+    - "{{ neo_main_notify }}"
+
+- name: Remove the shasum files.
+  file:
+    path: "/opt/neo-python/{{ item }}"
+    state: absent
+  with_items:
+    - "shasum_{{ neo_block.stdout }}.txt"
+    - shasum_latest.txt
+
+- name: Get a list of the bucket files.
+  shell: gsutil ls gs://neo-python-chain.narrative.org
+  register: gsutil_ls
+
+- name: Template in index.html.
+  template:
+    src: index.html.j2
+    dest: /opt/neo-python/index.html
+
+- name: Upload to the Google bucket.
+  shell: gsutil cp /opt/neo-python/index.html gs://neo-python-chain.narrative.org/index.html
+
+- name: Remove the index.html file.
+  file:
+    path: /opt/neo-python/index.html
+    state: absent
+
+- name: Debug.
+  debug:
+    msg: "{{ item }}"
+  with_items: "{{ gsutil_ls.stdout_lines }}"
+

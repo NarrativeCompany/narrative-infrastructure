@@ -1,0 +1,13 @@
+---
+neo_payment_chains_dir: Chains/Main
+neo_payment_notif_dir: Chains/Main_Notif
+neo_payment_docker_image: narrativecompany/neo-payment:v0.8.4
+mount_path: /opt/neo-payment
+network: MAINNET
+niche_payment_address: AKrm9BxdkQcqhnaRyCraLxyDXFepAwnjRA
+smart_contract: a721d5893480260bd28ca1f395f2c465d0b5b1c2
+from_address: alerts@narrative.org
+to_address: devops-leaders@narrative.org
+
+# cloudsql
+instance: production-master

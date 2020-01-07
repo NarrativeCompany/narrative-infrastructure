@@ -1,0 +1,7 @@
+---
+- name: restart_ipset-blacklist
+  systemd:
+    name: ipset-blacklist
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

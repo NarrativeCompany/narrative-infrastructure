@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: alertmanager
+  name: alertmanager
+  namespace: monitoring
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+      name: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.15.3
+        command: ['/bin/alertmanager']
+        args:
+          - '--config.file=/etc/alertmanager/config.yml'
+          - '--storage.path=/alertmanager'
+          - '--web.external-url=https://sandbox-alertmanager.narrative.cloud'
+        ports:
+        - containerPort: 9093
+          name: alertmanager
+          protocol: TCP
+        resources:
+          requests:
+            cpu: .1
+            memory: 128M
+          limits:
+            cpu: .5
+            memory: 1024M
+        volumeMounts:
+        - mountPath: /etc/alertmanager
+          name: alertmanager-config
+          readOnly: true
+        - mountPath: /opt/template
+          name: alertmanager-template
+          readOnly: true
+      volumes:
+      - name: alertmanager-config
+        configMap:
+          defaultMode: 420
+          name: alertmanager-config
+      - name: alertmanager-template
+        configMap:
+          defaultMode: 420
+          name: alertmanager-template

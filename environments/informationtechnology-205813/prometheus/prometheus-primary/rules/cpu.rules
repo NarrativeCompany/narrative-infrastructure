@@ -1,0 +1,39 @@
+groups:
+- name: cpu.rules
+  rules:
+  - alert: CpuAbove85
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'CPU usage is above 85% for 5 minutes.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#cpuabove85'
+    expr: 1 - (avg without (cpu)(irate(node_cpu_seconds_total{mode="idle"}[5m]))) > .85
+    for: 5m
+    labels:
+      severity: warning
+  - alert: CpuAbove85
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'CPU usage is above 85% for 15 minutes.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#cpuabove85'
+    expr: 1 - (avg without (cpu)(irate(node_cpu_seconds_total{cluster="narrative-production-cluster",mode="idle"}[5m]))) > .85
+    for: 15m
+    labels:
+      severity: critical
+  - alert: SystemLoadAbove85
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'Normalized system load is above .85 for 5 minutes.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#systemloadabove85'
+    expr: sum by (gce_instance_name,instance,cluster) (node_load1) / count by (gce_instance_name,instance,cluster) (node_cpu_seconds_total{mode="idle"}) > .85
+    for: 5m
+    labels:
+      severity: warning
+  - alert: SystemLoadAbove85
+    annotations:
+      identifier: '{{ $labels.gce_instance_name }}'
+      message: 'Normalized system load is above .85 for 15 minutes.'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#systemloadabove85'
+    expr: sum by (gce_instance_name,instance,cluster) (node_load1{cluster=~"narrative-production-cluster|neo"}) / count by (gce_instance_name,instance,cluster) (node_cpu_seconds_total{cluster=~"narrative-production-cluster|neo",mode="idle"}) > .85
+    for: 15m
+    labels:
+      severity: critical

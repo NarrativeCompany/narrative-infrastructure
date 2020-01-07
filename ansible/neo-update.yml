@@ -1,0 +1,41 @@
+# This is the playbook to update the neo instance
+---
+- hosts: tag_neo
+  become: yes
+  gather_facts: yes
+  serial: 1
+  tasks:
+    - name: Shutdown neo
+      shell: "systemctl stop {{ item }}"
+      with_items:
+        - neo-python
+        - haproxy
+
+    - name: Update apt
+      apt: 
+        upgrade: dist
+ 
+    - name: Update docker
+      debug:
+        msg: "TODO"
+ 
+    - name: Pull new neo-python image
+      shell: docker pull narrativecompany/neo-python:latest
+      changed_when: false
+
+    - name: Reboot system (this will also start neo-python).
+      shell: "sleep 1 && reboot"
+      async: 1
+      poll: 0
+
+    - name: Wait for the reboot to complete.
+      wait_for_connection:
+        sleep: 5
+        delay: 5
+        timeout: 300
+
+    - name: Wait for the neo port to be ready.
+      wait_for:
+        port: 10332
+        delay: 5
+

@@ -1,0 +1,15 @@
+  - job_name: 'federation-staging'
+    basic_auth:
+      username: narrative-prometheus-federation-2018-Chaucer
+      password_file: /opt/narrative-prometheus-federation/password_file
+    honor_labels: true
+    metrics_path: '/federate'
+    params:
+      match[]:
+        - '{job=~".+", __name__!="ALERTS", __name__!="ALERTS_FOR_STATE"}'
+    scheme: https
+    static_configs:
+      - targets:
+        - 'staging-prometheus-federation.narrative.cloud:443'
+        labels:
+          cluster: 'narrative-staging-cluster'

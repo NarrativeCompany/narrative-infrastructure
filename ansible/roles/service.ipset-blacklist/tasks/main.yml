@@ -1,0 +1,53 @@
+---
+# tasks file for service.ipset-blacklistn
+
+- name: Install ipset.
+  apt:
+    name: ipset
+    state: present
+    update_cache: yes
+
+- name: Copy the update-blacklist.sh file.
+  copy:
+    src: update-blacklist.sh
+    dest: /usr/local/sbin/update-blacklist.sh
+    mode: 0755
+  notify: restart_ipset-blacklist
+
+- name: Create the /etc/ipset-blacklist directory.
+  file:
+    path: /etc/ipset-blacklist
+    state: directory
+
+- name: Copy the ipset-blacklist.conf file.
+  copy:
+    src: ipset-blacklist.conf
+    dest: /etc/ipset-blacklist/ipset-blacklist.conf
+  notify: restart_ipset-blacklist
+
+- name: Copy in systemd service and timer files.
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+  with_items:
+    - ipset-blacklist.service
+    - ipset-blacklist.timer
+  notify: restart_ipset-blacklist
+
+- name: Flush handlers (restart ipset-blacklist if necessary).
+  meta: flush_handlers
+
+- name: Make sure ipset-blacklist service is started.
+  systemd:
+    name: ipset-blacklist
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Make sure ipset-blacklist timer is started.
+  systemd:
+    name: ipset-blacklist.timer
+    state: started
+    enabled: yes
+    daemon_reload: yes
+

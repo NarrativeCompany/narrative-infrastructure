@@ -1,0 +1,43 @@
+---
+# tasks file for service.fail2ban
+
+- name: Install fail2ban.
+  apt:
+    name: fail2ban
+    state: present
+    update_cache: yes
+
+- name: Copy the jail.local file.
+  copy:
+    src: jail.local
+    dest: /etc/fail2ban/jail.local
+  notify: restart_fail2ban
+
+- name: Copy the fail2ban.local file.
+  copy:
+    src: fail2ban.local
+    dest: /etc/fail2ban/fail2ban.local
+  notify: restart_fail2ban
+
+- name: Copy the common.local file.
+  copy:
+    src: common.local
+    dest: /etc/fail2ban/filter.d/common.local
+  notify: restart_fail2ban
+
+- name: Copy the iptables-multiport.local file.
+  copy:
+    src: iptables-multiport.local
+    dest: /etc/fail2ban/action.d/iptables-multiport.local
+  notify: restart_fail2ban
+
+- name: Flush handlers (restart fail2ban if necessary).
+  meta: flush_handlers
+
+- name: Make sure fail2ban service is started.
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: yes
+    daemon_reload: yes
+

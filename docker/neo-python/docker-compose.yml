@@ -1,0 +1,11 @@
+version: '3'
+volumes:
+    neo_py_data: {}
+services:
+  neo-py:
+    image: narrativecompany/neo-python:latest
+    volumes:
+      - neo_py_data:/home/neo-user/.neopython
+    ports:
+      - 127.0.0.1:10332:10332
+      - 127.0.0.1:10333:10333

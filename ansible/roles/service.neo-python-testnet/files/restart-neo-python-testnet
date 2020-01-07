@@ -1,0 +1,10 @@
+#!/bin/bash
+
+systemctl is-active --quiet neo-python-testnet
+rc="$?"
+
+if [ "${rc}" = "0" ]; then
+  systemctl restart neo-python-testnet
+fi
+
+exit 0

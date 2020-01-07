@@ -1,0 +1,84 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus
+  name: prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus
+      name: prometheus
+    spec:
+      serviceAccount: prometheus
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.5.0
+        args:
+          - "--storage.tsdb.retention=60d"
+          - "--storage.tsdb.path=/prometheus/data"
+          - "--config.file=/etc/prometheus/config/prometheus.yml"
+          - "--web.external-url=https://sandbox-prometheus.narrative.cloud"
+        env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /opt/prometheus-gce/prometheus.json
+        ports:
+        - containerPort: 9090
+          name: prometheus
+          protocol: TCP
+        resources:
+          requests:
+            cpu: .25
+            memory: 512M
+          limits:
+            cpu: 2
+            memory: 2048M
+        volumeMounts:
+        - mountPath: /etc/prometheus/config
+          name: prometheus-config
+          readOnly: true
+        - mountPath: /etc/prometheus/rules
+          name: prometheus-rules
+          readOnly: true
+        - mountPath: /prometheus
+          name: prometheus-data
+        - mountPath: /opt/prometheus-gce
+          name: prometheus-gce
+          readOnly: true
+        - mountPath: /opt/prometheus-tls-client
+          name: prometheus-tls-client
+          readOnly: true
+        - mountPath: /opt/prometheus-tls-client-ca
+          name: prometheus-tls-client-ca
+          readOnly: true
+        - mountPath: /prometheus
+          name: prometheus-data
+      securityContext:
+        fsGroup: 65534
+      volumes:
+      - name: prometheus-config
+        configMap:
+          defaultMode: 420
+          name: prometheus-config
+      - name: prometheus-rules
+        configMap:
+          defaultMode: 420
+          name: prometheus-rules
+      - name: prometheus-gce
+        secret:
+          defaultMode: 420
+          secretName: prometheus-gce
+      - name: prometheus-tls-client
+        secret:
+          defaultMode: 420
+          secretName: prometheus-tls-client
+      - name: prometheus-tls-client-ca
+        configMap:
+          defaultMode: 420
+          name: prometheus-tls-client-ca
+      - name: "prometheus-data"
+        persistentVolumeClaim:
+          claimName: prometheus-data

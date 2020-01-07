@@ -1,0 +1,9 @@
+[Unit]
+Description=Prints the SSH host key to stdout (for Google serialport).
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c "/usr/bin/ssh-keygen -y -f /etc/ssh/ssh_host_ecdsa_key > /dev/ttyS0"
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+{% for each in gsutil_ls.stdout_lines %}
+<a href="https://neo-python-chain.narrative.org/{{ each.split('/')[-1] }}">{{ each.split('/')[-1] }}</a><br>
+{% endfor %}
+

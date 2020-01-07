@@ -1,0 +1,6 @@
+{
+    "github_ips_only": false,
+    "enforce_secret": "",
+    "return_scripts_info": true,
+    "jenkins_url": "http://jenkins:8080/generic-webhook-trigger/invoke"
+}

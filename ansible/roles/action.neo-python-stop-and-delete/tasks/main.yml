@@ -1,0 +1,13 @@
+---
+- name: Stop neo-python.
+  systemd:
+    name: neo-python
+    state: stopped
+
+- name: Reset failed.
+  shell: systemctl reset-failed
+
+- name: Delete the /opt/neo-python/Chains directory.
+  file: 
+    path: /opt/neo-python/Chains
+    state: absent

@@ -1,0 +1,13 @@
+---
+apt_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg2
+  - jq
+  - netcat
+  - software-properties-common
+
+mount_path: /opt/solr
+solr_docker_image: solr:7.4
+zookeeper_docker_image: zookeeper:3.5

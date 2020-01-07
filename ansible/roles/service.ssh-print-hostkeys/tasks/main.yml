@@ -1,0 +1,16 @@
+---
+- name: Copy in systemd service and timer files.
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+  with_items:
+    - ssh-print-hostkeys.service
+    - ssh-print-hostkeys.timer
+
+- name: Restart the systemd timer (no harm in doing this always).
+  systemd:
+    name: ssh-print-hostkeys.timer
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+

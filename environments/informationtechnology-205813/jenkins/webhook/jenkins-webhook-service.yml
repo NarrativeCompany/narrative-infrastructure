@@ -1,0 +1,14 @@
+---
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: jenkins-webhook
+    namespace: jenkins
+  spec:
+    selector:
+      app: jenkins-webhook
+    ports:
+      - protocol: TCP
+        port: 5000
+        targetPort: 5000
+        name: jenkins-webhook

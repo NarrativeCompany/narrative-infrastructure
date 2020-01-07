@@ -1,0 +1,21 @@
+groups:
+- name: pod.rules
+  rules:
+  - alert: PodAbove85
+    annotations:
+      identifier: '{{ $labels.pod_name }}'
+      message: 'Kubernetes pod CPU usage is above 85%'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#podabove85'
+    expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~".*",image!="",name=~"^k8s_.*",container_name!="POD"}[1m])) by (cluster,pod_name) > .85
+    for: 1m
+    labels:
+      severity: warning
+  - alert: PodAbove85
+    annotations:
+      identifier: '{{ $labels.pod_name }}'
+      message: 'Kubernetes pod CPU usage is above 85%'
+      runbook_url: 'https://github.com/NarrativeCompany/narrative-infrastructure/wiki/Alertmanager-Runbooks#podabove85'
+    expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~".*",image!="",name=~"^k8s_.*",container_name!="POD"}[1m])) by (cluster,pod_name) > .85
+    for: 10m
+    labels:
+      severity: critical

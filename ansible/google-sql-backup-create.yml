@@ -1,0 +1,31 @@
+# This playbook creates Google SQL backups for the specified instance in the specified project with the specified description.
+#
+# Requires the -e (--extra-vars) option to pass in the project, instance, and description variables.
+#
+# Example command to create a Google SQL backup for the dev-master instance in sandbox-narrative:
+# ansible-playbook google-sql-backup-create.yml -e project=sandbox-narrative -e instance=dev-master -e description=jeffs-manual-backup
+#
+---
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  tasks:
+    - name: Set variable facts.
+      set_fact:
+        project: "{{ project }}"
+        instance: "{{ instance }}"
+        description: "{{ description }}"
+
+    - name: Create a Google SQL backup..
+      shell: gcloud  --project {{ project }} sql backups create --instance {{ instance }} --description {{ description }}
+      async: 1000
+      poll: 0
+      register: backup_sql
+
+    - name: Check the Google SQL backup task.
+      async_status:
+        jid: "{{ backup_sql.ansible_job_id }}"
+      register: result_backup_sql
+      until: result_backup_sql.finished
+      retries: 360
+      delay: 10

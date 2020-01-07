@@ -1,0 +1,9 @@
+---
+# tasks file for service.bot-ops_authorized_keys.
+
+- name: Set authorized key for bot-ops, removing all the authorized keys already set.
+  authorized_key:
+    user: "bot-ops"
+    key: "{{ bot_ops_authorized_keys }}"
+    state: present
+    exclusive: True

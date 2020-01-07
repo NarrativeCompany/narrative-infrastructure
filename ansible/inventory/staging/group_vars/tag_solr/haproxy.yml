@@ -1,0 +1,13 @@
+haproxy_frontend:
+  - |
+      frontend https-prometheus-in
+          bind 0.0.0.0:9143 ssl crt /opt/haproxy/ssl/prometheus-node-exporter/combined.pem ca-file /opt/haproxy/ssl/prometheus-node-exporter/ca.pem verify required
+          capture request header Host len 32
+          reqadd Is-Secure:\ true
+          default_backend prometheus_backend
+
+haproxy_backend:
+  - |
+      backend prometheus_backend
+          server prometheus 127.0.0.1:9100
+

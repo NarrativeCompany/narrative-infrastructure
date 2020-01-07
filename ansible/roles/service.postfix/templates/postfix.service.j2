@@ -1,0 +1,17 @@
+[Unit]
+Description=Postfix service.
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStartPre=-/usr/bin/docker rm postfix
+ExecStart=/usr/bin/docker run --name postfix \
+    --hostname postfix \
+    --net host \
+    -p 127.0.0.1:587:587 \
+    {{ postfix_docker_image }} 
+ExecStop=-/usr/bin/docker stop postfix
+
+[Install]
+WantedBy=multi-user.target

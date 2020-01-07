@@ -1,0 +1,8 @@
+tickTime=2000
+dataDir=/var/zookeeper
+clientPort=2181
+initLimit=5
+syncLimit=2
+{% for each in groups['tag_solr'] %}
+server.{{ hostvars[each]['zookeeper_id']['stdout'] }}={{ hostvars[each]['google_hostname']['stdout'] }}:2888:3888
+{% endfor %}

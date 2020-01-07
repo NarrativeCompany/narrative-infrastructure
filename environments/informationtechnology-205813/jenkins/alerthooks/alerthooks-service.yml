@@ -1,0 +1,14 @@
+---
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: alerthooks
+    namespace: jenkins
+  spec:
+    selector:
+      app: alerthooks
+    ports:
+      - protocol: TCP
+        port: 5000
+        targetPort: 5000
+        name: alerthooks

@@ -1,0 +1,36 @@
+global
+    maxconn 32768
+    tune.ssl.default-dh-param 2048
+    ssl-default-bind-options no-sslv3
+    ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:!RC4:!LOW:!EXP:!aNULL:!eNULL:!MD5:!DSS
+    ssl-default-server-options no-sslv3
+    ssl-default-server-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:!RC4:!LOW:!EXP:!aNULL:!eNULL:!MD5:!DSS
+    log /dev/log local0
+    daemon
+
+defaults
+    log global
+    mode http
+    option httplog
+    option forwardfor
+    option http-server-close
+    timeout http-request 10s
+    timeout connect 5s
+    timeout client 60s
+    timeout server 300s
+
+
+{% for each in haproxy_frontend %}
+{{ each }}
+{% endfor %}
+
+{% for each in haproxy_backend %}
+{{ each }}
+{% endfor %}
+
+{% if haproxy_stats is defined %}
+{% for each in haproxy_stats %}
+{{ each }}
+{% endfor %}
+{% endif %}
+

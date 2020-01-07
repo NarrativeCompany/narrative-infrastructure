@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jenkins-webhook
+  namespace: jenkins
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jenkins-webhook
+    spec:
+      containers:
+      - name: master
+        image: narrativecompany/jenkins-webhook:2018-10-11-6
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: SECRET
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: SECRET
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-token
+              key: SECRET
+        resources:
+          requests:
+            cpu: .1
+            memory: 64M
+          limits:
+            cpu: .25
+            memory: 256M
+      imagePullSecrets:
+        - name: narrativecompany-docker

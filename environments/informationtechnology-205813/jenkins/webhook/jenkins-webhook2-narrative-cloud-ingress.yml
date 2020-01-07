@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  name: jenkins-webhook2
+  namespace: jenkins
+spec:
+  rules:
+  - host: jenkins-webhook2.narrative.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: jenkins-webhook
+          servicePort: 5000
+  tls:
+  - secretName: cloudflare-wildcard-narrative-cloud
+    hosts:
+      - jenkins-webhook2.narrative.cloud

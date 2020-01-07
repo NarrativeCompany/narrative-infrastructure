@@ -1,0 +1,24 @@
+---
+# task file for service.google-fluentd
+
+- name: Gather package facts
+  package_facts:
+    manager: auto
+
+- name: Install google-fluentd package if it isn't installed.
+  shell: curl -sSO https://dl.google.com/cloudagents/install-logging-agent.sh; sudo bash install-logging-agent.sh
+  args:
+    warn: false
+  when: '"google-fluentd" not in ansible_facts.packages'
+
+- name: Remove install-logging-agent.sh.
+  file:
+    path: /home/bot-ops/install-logging-agent.sh
+    state: absent
+
+- name: Make sure the google-fluentd service is started.
+  systemd:
+    name: google-fluentd
+    state: started
+    enabled: yes
+    daemon_reload: yes

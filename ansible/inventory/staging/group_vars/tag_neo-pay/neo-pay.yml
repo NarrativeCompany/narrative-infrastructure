@@ -1,0 +1,13 @@
+---
+neo_payment_chains_dir: Chains/SC234
+neo_payment_notif_dir: Chains/Test_Notif
+neo_payment_docker_image: narrativecompany/neo-payment:v0.8.2-385
+mount_path: /opt/neo-payment
+network: TESTNET
+niche_payment_address: AKXfUFAQzkFdoE7JgT6gzniJeQZT9TpppA
+smart_contract: 583d08308c7cb5a9ea567a2aae5acdd35c77d19b
+from_address: alerts@narrative.org
+to_address: devops-leaders@narrative.org
+
+# cloudsql
+instance: staging-master

@@ -1,0 +1,42 @@
+groups:
+- name: kubernetes-storage
+  rules:
+  - alert: KubePersistentVolumeFree25
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
+      message: A persistent volume claim has less than 25% free space.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeusagecritical
+    expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes * 100 < 25
+    for: 5m
+    labels:
+      severity: warning
+  - alert: KubePersistentVolumeFree15
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
+      message: A persistent volume claim has less than 25% free space.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeusagecritical
+    expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes * 100 < 15
+    for: 5m
+    labels:
+      severity: critical
+  - alert: KubePersistentVolumeWillFillIn7Days
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
+      message: The persistent volume claim will fill up in 7 days.
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefullinfourdays
+    expr: |
+      predict_linear(kubelet_volume_stats_available_bytes{}[1h], 168 * 3600) < 0
+    for: 3m
+    labels:
+      severity: warning
+  - alert: KubePersistentVolumeWillFillIn72Hours
+    annotations:
+      identifier: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}'
+      message: The persistent volume claim will fill up in 72 hours..
+      runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefullinfourdays
+    expr: |
+      predict_linear(kubelet_volume_stats_available_bytes{}[1h], 72 * 3600) < 0
+    for: 3m
+    labels:
+      severity: warning
+

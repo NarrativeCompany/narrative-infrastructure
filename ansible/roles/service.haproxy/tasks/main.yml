@@ -1,0 +1,35 @@
+---
+# tasks file for instance.haproxy
+
+- name: Create /opt/haproxy/ssl directory.
+  file:
+    path: /opt/haproxy/ssl
+    state: directory
+
+- name: Create the haproxy.cfg file.
+  template:
+    src: haproxy.cfg.j2
+    dest: /opt/haproxy/haproxy.cfg
+  notify: reload_haproxy
+
+- name: Create the star.narrative.org.pem file.
+  copy:
+    src: star.narrative.org.pem
+    dest: /opt/haproxy/ssl/star.narrative.org.pem
+  notify: reload_haproxy
+
+- name: Create the haproxy.service file.
+  copy:
+    src: haproxy.service
+    dest: /etc/systemd/system/haproxy.service
+  notify: restart_haproxy
+
+- name: Flush handlers (restart haproxy if necessary).
+  meta: flush_handlers
+
+- name: Start haproxy.
+  systemd:
+    name: haproxy
+    state: started
+    enabled: yes
+    daemon_reload: yes

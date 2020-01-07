@@ -1,0 +1,10 @@
+# Run a single role against a host.
+#
+# Example command to run the service.docker role against neo-pay-01.
+# ansible-playbook -i inventory/sandbox runrole.yml -e onhosts=neo-pay-01 -e role=service.docker
+#
+- hosts: "{{onhosts}}"
+  gather_facts: "{{gather |default(True)}}"
+  become: yes
+  roles:
+  - "{{role}}"

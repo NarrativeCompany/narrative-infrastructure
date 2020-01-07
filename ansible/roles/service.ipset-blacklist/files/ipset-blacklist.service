@@ -1,0 +1,10 @@
+[Unit]
+Description=Updates the ipset blacklist.
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/sbin/update-blacklist.sh /etc/ipset-blacklist/ipset-blacklist.conf
+
+[Install]
+WantedBy=multi-user.target

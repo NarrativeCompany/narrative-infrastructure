@@ -1,0 +1,1 @@
+HAPROXY_EXPORTER_OPTS="--haproxy.scrape-uri='http://127.0.0.1:9000/haproxy_stats;csv'"

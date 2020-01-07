@@ -1,0 +1,45 @@
+---
+# tasks file for service.docker
+# https://docs.docker.com/install/linux/docker-ce/debian/#install-docker-ce
+- name: Install Docker apt key.
+  shell: curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+
+- name: Verify the key has been installed.
+  shell: apt-key fingerprint 0EBFCD88 | grep CD88
+  changed_when: false
+
+- name: Create the apt sources file.
+  copy:
+    content: "deb [arch=amd64] https://download.docker.com/linux/debian stretch stable"
+    dest: /etc/apt/sources.list.d/docker.list
+
+- name: Update apt cache.
+  apt:
+    update_cache: yes
+  changed_when: false
+
+- name: Install Docker.
+  apt:
+    name: docker-ce
+    state: present
+
+- name: Creates /etc/docker directory
+  file: path=/etc/docker state=directory
+
+- name: Copy the Docker daemon.json template.
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+
+- name: Ensure Docker is started.
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Hold Docker to currently installed version using apt-mark.
+  shell: apt-mark hold docker-ce
+
+- name: Login to docker if credentials are provided
+  shell: docker login -u {{ vault_docker_username }} -p {{ vault_docker_password }}
+  when: vault_docker_username is defined
